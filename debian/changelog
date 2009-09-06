@@ -5,6 +5,8 @@ yubikey-personalization (0.97-1) unstable; urgency=low
     - Make -h work when there's no yubikey plugged in too
     - Add link to reference manual for explanation of options
   * Bump build-depends for libyubikey-dev to 1.5 or higher.
+  * Add some missing copyrights to debian/copyright, thanks to Chris Lamb
+    for noticing.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Sat, 05 Sep 2009 11:43:54 +0200
 
