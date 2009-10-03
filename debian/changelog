@@ -1,6 +1,7 @@
 yubikey-personalization (1.1-1) unstable; urgency=low
 
   * New upstream release, minor fixes.
+  * Add some more docs to the installed package.  Closes: #548238
 
  -- Tollef Fog Heen <tfheen@debian.org>  Sat, 03 Oct 2009 21:45:59 +0200
 
