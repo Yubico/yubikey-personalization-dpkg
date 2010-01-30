@@ -53,3 +53,9 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykp_set_uid@LIBYKPERS_1.0 0.97
  ykp_strerror@LIBYKPERS_1.0 0.97
  ykp_write_config@LIBYKPERS_1.0 0.97
+ ykp_set_cfgflag_OATH_HOTP8@LIBYKPERS_1.0 1.3
+ ykp_set_cfgflag_OATH_FIXED_MODHEX1@LIBYKPERS_1.0 1.3
+ ykp_set_cfgflag_OATH_FIXED_MODHEX2@LIBYKPERS_1.0 1.3
+ ykp_set_cfgflag_OATH_FIXED_MODHEX@LIBYKPERS_1.0 1.3
+ ykp_set_tktflag_OATH_HOTP@LIBYKPERS_1.0 1.3
+ yk_check_firmware_version@LIBYKPERS_1.0 1.3
