@@ -77,14 +77,17 @@ check_PROGRAMS = $(ctests)
 TESTS = $(ctests)
 
 # Dist docs from wiki.
-EXTRA_DIST = doc/Compatibility.wiki doc/MakeRelease.wiki doc/ReadMe.wiki doc/UsbhidIssue.wiki
+EXTRA_DIST = doc/Compatibility.wiki doc/MakeRelease.wiki doc/ReadMe.wiki doc/UsbhidIssue.wiki doc/WindowsBuild.wiki
+
+# Dist contrib stuff.
+EXTRA_DIST += contrib/README contrib/programming.sh
 
 # Release
 
 PROJECT = yubikey-personalization
 
 ChangeLog:
-	svn2cl
+	svn2cl || echo "Missing due to http://code.google.com/p/support/issues/detail?id=4713" > ChangeLog
 
 check-doc-dist:
 	perl -pe "s,^EXTRA_DIST = .*,EXTRA_DIST = `echo doc/*.wiki`," < Makefile.am > tmp
@@ -95,7 +98,7 @@ release:
 		echo "Try this instead:"; \
 		echo "  make release USER=[GOOGLEUSERNAME] KEYID=[PGPKEYID]"; \
 		echo "For example:"; \
-		echo "  make release USER=simon75j KEYID=B9156397"; \
+		echo "  make release USER=simon@yubico.com KEYID=B9156397"; \
 		exit 1; \
 	fi
 	@if head -3 NEWS | grep -q unreleased; then \
@@ -109,7 +112,26 @@ release:
 	svn copy https://$(PROJECT).googlecode.com/svn/trunk/ \
 	 https://$(PROJECT).googlecode.com/svn/tags/$(PACKAGE)-$(VERSION) \
 	 -m "Tagging the $(VERSION) release of the $(PACKAGE) project."
+	mkdir -p ../releases/$(PACKAGE)/ && \
+		cp -v $(PACKAGE)-$(VERSION).tar.gz* ../releases/$(PACKAGE)/
 	googlecode_upload.py -s "OpenPGP signature for $(PACKAGE) $(VERSION)." \
 	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz.sig
 	googlecode_upload.py -s "$(PACKAGE) $(VERSION)" \
 	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz 
+
+upload-ykpers4win:
+	gpg --detach-sign --default-key $(KEYID) \
+		$(PACKAGE)-$(VERSION)-win$(BITS).zip
+	gpg --verify $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig
+	googlecode_upload.py \
+	 -s "OpenPGP signature for $(PACKAGE)-$(VERSION)-win$(BITS).zip." \
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig
+	googlecode_upload.py \
+	 -s "Windows $(BITS)-bit binaries of $(PACKAGE) $(VERSION)" \
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip
+
+upload-ykpers4win32:
+	make upload-ykpers4win BITS=32
+
+upload-ykpers4win64:
+	make upload-ykpers4win BITS=64
