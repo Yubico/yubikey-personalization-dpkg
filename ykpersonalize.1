@@ -206,6 +206,17 @@ When using OATH-HOTP mode, the key that is shared with the server
 consists of the AES key plus the first four bytes (eight hex
 characters) of the UID.  The token identifier is defined by the fixed
 prefix.
+.SH Modhex
+Modhex is a way of writing hex digits where the \(lqdigits\(rq are
+chosen for being in the same place on most keyboard layouts.  To
+convert from hex to modhex, you can use
+.RS
+tr "[0123456789abcdef]" "[cbdefghijklnrtuv]"
+.RE
+To convert the other way, use 
+.RS
+tr "[cbdefghijklnrtuv]" "[0123456789abcdef]"
+.RE
 .SH BUGS
 Report ykpersonalize bugs in 
 .URL "http://code.google.com/p/yubikey-personalization/issues/list" "the issue tracker"
