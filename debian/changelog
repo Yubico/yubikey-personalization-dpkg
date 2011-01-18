@@ -1,6 +1,7 @@
 yubikey-personalization (1.4-1) unstable; urgency=low
 
   * New upstream release
+  * Update debian/docs to accomodate new paths
 
  -- Tollef Fog Heen <tfheen@debian.org>  Tue, 18 Jan 2011 19:43:15 +0100
 

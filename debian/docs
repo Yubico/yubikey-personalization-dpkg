@@ -1,5 +1,5 @@
 NEWS
 README
-doc/UsbhidIssue.wiki
-doc/MakeRelease.wiki
-doc/ReadMe.wiki
+doc/Compatibility.asciidoc
+doc/Read-Me.asciidoc
+doc/USB-Hid-Issue.asciidoc
