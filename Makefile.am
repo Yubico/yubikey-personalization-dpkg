@@ -1,5 +1,5 @@
 # Written by Richard Levitte <richard@levitte.org>.
-# Copyright (c) 2008, 2009, 2010 Yubico AB
+# Copyright (c) 2008, 2009, 2010, 2011 Yubico AB
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 
 # Subdirectories
 
-SUBDIRS=ykcore
+SUBDIRS=ykcore tests
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -48,6 +48,7 @@ libykpers_1_la_SOURCES += ykpers-1.pc.in libykpers-1.map
 libykpers_1_la_LIBADD = $(LTLIBYUBIKEY) ./ykcore/libykcore.la
 libykpers_1_la_LDFLAGS = -no-undefined \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
+libykpers_1_la_DEPENDENCIES = libykpers-1.map
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ykpers-1.pc
@@ -67,17 +68,8 @@ ykpersonalize_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
 
 dist_man1_MANS = ykpersonalize.1
 
-# Self tests.
-
-AM_LDFLAGS = -no-install
-LDADD = ./libykpers-1.la
-
-ctests = selftest$(EXEEXT)
-check_PROGRAMS = $(ctests)
-TESTS = $(ctests)
-
 # Dist docs from wiki.
-EXTRA_DIST = doc/Compatibility.wiki doc/MakeRelease.wiki doc/ReadMe.wiki doc/UsbhidIssue.wiki doc/WindowsBuild.wiki
+EXTRA_DIST = doc/Compatibility.asciidoc doc/Make-Release.asciidoc doc/Read-Me.asciidoc doc/USB-Hid-Issue.asciidoc doc/Windows-Build.asciidoc
 
 # Dist contrib stuff.
 EXTRA_DIST += contrib/README contrib/programming.sh
@@ -87,10 +79,10 @@ EXTRA_DIST += contrib/README contrib/programming.sh
 PROJECT = yubikey-personalization
 
 ChangeLog:
-	svn2cl || echo "Missing due to http://code.google.com/p/support/issues/detail?id=4713" > ChangeLog
+	git2cl > ChangeLog
 
 check-doc-dist:
-	perl -pe "s,^EXTRA_DIST = .*,EXTRA_DIST = `echo doc/*.wiki`," < Makefile.am > tmp
+	perl -pe "s,^EXTRA_DIST = .*,EXTRA_DIST = `echo doc/*.asciidoc`," < Makefile.am > tmp
 	diff -ur Makefile.am tmp || (echo 'error: please update Makefile.am'; exit 1)
 
 release:
@@ -109,9 +101,9 @@ release:
 	make check-doc-dist ChangeLog distcheck
 	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
 	gpg --verify $(PACKAGE)-$(VERSION).tar.gz.sig
-	svn copy https://$(PROJECT).googlecode.com/svn/trunk/ \
-	 https://$(PROJECT).googlecode.com/svn/tags/$(PACKAGE)-$(VERSION) \
-	 -m "Tagging the $(VERSION) release of the $(PACKAGE) project."
+	git tag -u $(KEYID)! -m $(VERSION) v$(VERSION)
+	git push
+	git push --tags
 	mkdir -p ../releases/$(PACKAGE)/ && \
 		cp -v $(PACKAGE)-$(VERSION).tar.gz* ../releases/$(PACKAGE)/
 	googlecode_upload.py -s "OpenPGP signature for $(PACKAGE) $(VERSION)." \
