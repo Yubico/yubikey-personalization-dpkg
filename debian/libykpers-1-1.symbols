@@ -59,3 +59,13 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykp_set_cfgflag_OATH_FIXED_MODHEX@LIBYKPERS_1.0 1.3
  ykp_set_tktflag_OATH_HOTP@LIBYKPERS_1.0 1.3
  yk_check_firmware_version@LIBYKPERS_1.0 1.3
+ LIBYKPERS_1.4@LIBYKPERS_1.4 1.4.1
+ ykp_HMAC_key_from_hex@LIBYKPERS_1.4 1.4.1
+ ykp_set_cfgflag_CHAL_BTN_TRIG@LIBYKPERS_1.4 1.4.1
+ ykp_set_cfgflag_CHAL_HMAC@LIBYKPERS_1.4 1.4.1
+ ykp_set_cfgflag_CHAL_YUBICO@LIBYKPERS_1.4 1.4.1
+ ykp_set_cfgflag_HMAC_LT64@LIBYKPERS_1.4 1.4.1
+ ykp_set_extflag_SERIAL_API_VISIBLE@LIBYKPERS_1.4 1.4.1
+ ykp_set_extflag_SERIAL_BTN_VISIBLE@LIBYKPERS_1.4 1.4.1
+ ykp_set_extflag_SERIAL_USB_VISIBLE@LIBYKPERS_1.4 1.4.1
+ ykp_set_tktflag_CHAL_RESP@LIBYKPERS_1.4 1.4.1
