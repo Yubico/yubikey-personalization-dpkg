@@ -37,7 +37,7 @@
 
 /*************************************************************************
  **
- ** N O T E :  For all functions that return a value, 0 och NULL indicates
+ ** N O T E :  For all functions that return a value, 0 and NULL indicates
  ** an error, other values indicate success.
  **
  ************************************************************************/
@@ -84,6 +84,17 @@ extern int yk_close_key(YK_KEY *k);		/* closes a previously opened key */
 extern int yk_get_status(YK_KEY *k, YK_STATUS *status /*, int forceUpdate */);
 /* checks that the firmware revision of the key is supported */
 extern int yk_check_firmware_version(YK_KEY *k);
+/* Read the factory set serial number from a YubiKey 2.0 or higher. */
+extern int yk_get_serial(YK_KEY *yk, uint8_t slot, unsigned int flags, unsigned int *serial);
+/* Wait for the key to either set or clear bits in it's status byte */
+extern int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
+				  unsigned int max_time_ms,
+				  bool logic_and, unsigned char mask,
+				  unsigned char *last_data);
+/* Read the response to a command from the YubiKey */
+extern int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
+				     void *buf, unsigned int bufsize, unsigned int expect_bytes,
+				     unsigned int *bytes_read);
 
 /*************************************************************************
  *
@@ -96,6 +107,8 @@ extern int yk_check_firmware_version(YK_KEY *k);
    acc_code has to be provided of the key has a protecting access code. */
 extern int yk_write_config(YK_KEY *k, YK_CONFIG *cfg, int confnum,
 			   unsigned char *acc_code);
+/* Write something to the YubiKey (a command that is). */
+extern int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount);
 
 /*************************************************************************
  *
@@ -117,7 +130,16 @@ const char *yk_usb_strerror();
 #define YK_ENOKEY	0x05
 #define YK_EFIRMWARE	0x06
 #define YK_ENOMEM	0x07
-#define YK_ENOSTATUS	0x07
-#define YK_ENOTYETIMPL	0x08
+#define YK_ENOSTATUS	0x08
+#define YK_ENOTYETIMPL	0x09
+#define YK_ECHECKSUM	0x0a	/* checksum validation failed */
+#define YK_EWOULDBLOCK	0x0b	/* operation would block */
+
+/* Flags for response reading. Use high numbers to not exclude the possibility
+ * to combine these with for example SLOT commands from ykdef.h in the future.
+ */
+#define YK_FLAG_MAYBLOCK	0x01 << 16
+
+#define YK_CRC_OK_RESIDUAL	0xf0b8
 
 #endif	/* __YKCORE_H_INCLUDED__ */

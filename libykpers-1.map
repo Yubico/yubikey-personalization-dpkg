@@ -109,3 +109,12 @@ LIBYKPERS_1.4 {
     ykp_set_extflag_SERIAL_API_VISIBLE;
 # Variables:
 } LIBYKPERS_1.0;
+
+LIBYKPERS_1.5 {
+  global:
+# Functions:
+  yk_wait_for_key_status;
+  yk_read_response_from_key;
+  yk_get_serial;
+# Variables:
+} LIBYKPERS_1.4;

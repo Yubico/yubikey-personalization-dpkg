@@ -43,7 +43,8 @@ ykpersonalize - personalize Yubikey OTP tokens
 .PP
 Set the AES key, user ID and other settings in a Yubikey.  For the complete
 explanation of the meaning of all parameters, see the reference
-manual: http://static.yubico.com/var/uploads/pdfs/YubiKey_Manual_2010-09-16.pdf
+manual: 
+.URL http://static.yubico.com/var/uploads/pdfs/YubiKey_Manual_2010-09-16.pdf "Yubikey manual"
 .TP
 \fB\-1\fR
 change the first configuration.  This is the default and is
@@ -81,17 +82,23 @@ Salt to be used when deriving key from a password.
 If none is given, a unique random one will be generated.
 .TP
 \fBfixed\fR=\fIfffffffffff\fR
-The public modhex identity of key, 0-16 characters long.
+The modhex \fIpublic identity\fR of the Yubikey, 0-16 characters long.
 It's possible to give the identity in hex as well, just prepend the
-value with `h:'.
+value with `h:'. The fixed part is emitted before the OTP when the
+button on the Yubikey is pressed. It can be used as an identifier for
+the user, for example.
 .TP
 \fBuid\fR=\fIuuuuuu\fR
-The uid part of the generated ticket, in hex.
-Must be 12 characters long.
+The uid part of the generated OTP, in hex.
+Must be 12 characters long. The uid is 6 bytes of static data that is included
+(encrypted) in every OTP, and is used to validate that an OTP was in fact encrypted
+with the AES key shared between the Yubikey and the validation service. It cannot
+be used to identify the Yubikey as it is only readable to those that know
+the AES key.
 .TP
 \fBaccess\fR=\fIfffffffffff\fR
-New hex access code to set.
-Must be 12 characters long.
+New hex access code to set. Must be 12 characters long.
+If an access code is set, it will be required for subsequent reprogramming of the Yubikey.
 .TP 
 [\-]\fIticket-flag\fR
 Set/clear ticket flag, see the section `Ticket flags\&'
@@ -207,7 +214,7 @@ When set, the first two bytes of the fixed part is sent as modhex.
 [\-]\fBoath-fixed-modhex\fR
 When set, the fixed part is sent as modhex.
 .TP
-\fBYubikey 2.1 firmware and above\fR
+\fBYubikey 2.2 firmware and above\fR
 .TP
 [\-]\fBchal-yubico\fR
 Yubico OTP challenge-response mode.
@@ -229,7 +236,7 @@ can be supplied with -a.
 .PP
 The token identifier can be set with the -ofixed= option.
 See section "5.3.4 - OATH-HOTP Token Identifier" of the
-.URL "http://static.yubico.com/var/uploads/pdfs/YubiKey_Manual_2010-09-16.pdf" "Yubikey manual"
+.URL "http://yubico.com/files/YubiKey_manual-2.0.pdf" "Yubikey manual"
 for details, but in short the token identifier is 2 bytes manufacturer prefix,
 2 bytes token type and then 8 bytes manufacturer unique ID.
 
@@ -252,10 +259,10 @@ tr "[cbdefghijklnrtuv]" "[0123456789abcdef]"
 .RE
 .SH BUGS
 Report ykpersonalize bugs in 
-.URL "http://code.google.com/p/yubikey-personalization/issues/list" "the issue tracker"
+.URL "https://github.com/Yubico/yubikey-personalization/issues" "the issue tracker"
 .SH "SEE ALSO"
 The 
 .URL "http://code.google.com/p/yubikey-personalization/" "ykpersonalize home page"
 .PP
 Yubikeys can be obtained from
-.URL "http://www.yubico.com/products/yubikey/" "Yubico" "."
+.URL "http://www.yubico.com/" "Yubico" "."
