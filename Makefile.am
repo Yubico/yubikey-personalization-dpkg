@@ -28,7 +28,7 @@
 
 # Subdirectories
 
-SUBDIRS=ykcore tests
+SUBDIRS= ykcore . tests
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -61,10 +61,13 @@ endif
 
 # The command line tools.
 
-bin_PROGRAMS = ykpersonalize
+bin_PROGRAMS = ykpersonalize ykchalresp
 
 ykpersonalize_SOURCES = ykpersonalize.c
 ykpersonalize_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
+
+ykchalresp_SOURCES = ykchalresp.c
+ykchalresp_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
 
 dist_man1_MANS = ykpersonalize.1
 
@@ -102,9 +105,9 @@ release:
 	make check-doc-dist ChangeLog distcheck
 	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
 	gpg --verify $(PACKAGE)-$(VERSION).tar.gz.sig
-	git tag -u $(KEYID)! -m $(VERSION) v$(VERSION)
-	git push
-	git push --tags
+	cd $(srcdir) && git push
+	cd $(srcdir) && git tag -u $(KEYID)! -m $(VERSION) v$(VERSION)
+	cd $(srcdir) && git push --tags
 	mkdir -p ../releases/$(PACKAGE)/ && \
 		cp -v $(PACKAGE)-$(VERSION).tar.gz* ../releases/$(PACKAGE)/
 	googlecode_upload.py -s "OpenPGP signature for $(PACKAGE) $(VERSION)." \

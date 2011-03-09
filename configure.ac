@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.4.1],
+AC_INIT([yubikey-personalization], [1.5.0],
   [yubico-devel@googlegroups.com], [ykpers],
   [http://code.google.com/p/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,9 +36,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 4)
+AC_SUBST(LT_CURRENT, 5)
 AC_SUBST(LT_REVISION, 0)
-AC_SUBST(LT_AGE, 3)
+AC_SUBST(LT_AGE, 4)
 
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
@@ -77,19 +77,29 @@ if test "x$with_backend" = xcheck; then
   esac
   AC_MSG_RESULT([$with_backend])
 fi
-AM_CONDITIONAL([BACKEND_LIBUSB], test x$with_backend = xlibusb)
-AM_CONDITIONAL([BACKEND_LIBUSB_1_0], test x$with_backend = xlibusb-1.0)
-AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
 
 if test "x$with_backend" = "xlibusb-1.0"; then
    PKG_CHECK_MODULES([LIBUSB], [libusb-1.0])
 fi
 
 if test x$with_backend = xlibusb; then
-  AC_LIB_HAVE_LINKFLAGS(usb,, [#include <usb.h>], [usb_init()])
+  freebsd_libusb_found=no
+  AC_CHECK_LIB(usb, libusb_init, [freebsd_libusb_found=yes])
+  if test "$freebsd_libusb_found" = yes; then
+    # FreeBSD 8 has an implementation of the libusb-1.0 API in -lusb,
+    # interestingly enough together with most of libusb-0 API, so this
+    # check has to be before the generic libusb-0 check
+    AC_LIB_HAVE_LINKFLAGS(usb,, [#include <libusb.h>], [libusb_init(NULL)])
+    with_backend=libusb-1.0
+  fi
+
+  if test "$ac_cv_libusb" != yes; then
+    AC_LIB_HAVE_LINKFLAGS(usb,, [#include <usb.h>], [usb_init()])
+  fi
+
   if test "$ac_cv_libusb" != yes; then
     if test "$with_backend_orig" = "check"; then
-     AC_MSG_ERROR([libusb-1.0 or libusb not found, please install one of them])
+      AC_MSG_ERROR([libusb-1.0 or libusb not found, please install one of them])
     else
       AC_MSG_ERROR([libusb not found, please install usb.h and libusb.so])
     fi
@@ -99,6 +109,10 @@ fi
 if test x$with_backend = xosx; then
   LDFLAGS="$LDFLAGS -framework IOKit -framework CoreFoundation"
 fi
+
+AM_CONDITIONAL([BACKEND_LIBUSB], test x$with_backend = xlibusb)
+AM_CONDITIONAL([BACKEND_LIBUSB_1_0], test x$with_backend = xlibusb-1.0)
+AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
 
 gl_LD_VERSION_SCRIPT
 

@@ -212,8 +212,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
 	bool mode_chosen = false;
 	bool option_seen = false;
 
-	struct config_st *ycfg;
-	ycfg = (struct config_st *) ykp_core_config(cfg);
+	struct config_st *ycfg = (struct config_st *) ykp_core_config(cfg);
 
 	while((c = getopt(argc, argv, optstring)) != -1) {
 		if (c == 'o') {
@@ -247,7 +246,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
 
 			option_seen = true;
 		}
-		    
+
 		switch (c) {
 		case '1':
 			if (slot_chosen) {
@@ -330,6 +329,15 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
 					fprintf(stderr,
 						"Invalid uid string: %s\n",
 						uid);
+					*exit_code = 1;
+					return 0;
+				}
+				/* for OATH-HOTP and CHAL-RESP, uid is not applicable */
+				if ((ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP ||
+				    (ycfg->tktFlags & TKTFLAG_CHAL_RESP) == TKTFLAG_CHAL_RESP) {
+					fprintf(stderr,
+						"Option uid= not valid with -ooath-hotp or -ochal-resp.\n"
+						);
 					*exit_code = 1;
 					return 0;
 				}
@@ -447,7 +455,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
 	}
 
 	if (*aesviahash) {
-		int long_key_valid = false;
+		bool long_key_valid = false;
 		int res = 0;
 
 		/* for OATH-HOTP, 160 bits key is also valid */
@@ -465,9 +473,9 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
 		} else {
 			res = ykp_AES_key_from_hex(cfg, aeshash);
 		}
-			
+
 		if (res) {
-			fprintf(stderr, "Bad AES key: %s\n", aeshash);
+			fprintf(stderr, "Bad %s key: %s\n", long_key_valid ? "HMAC":"AES", aeshash);
 			fflush(stderr);
 			return 0;
 		}
@@ -557,6 +565,20 @@ int main(int argc, char **argv)
 			     &exit_code)) {
 		goto err;
 	}
+
+	if (verbose && (ykds_version_major(st) > 2 ||
+			(ykds_version_major(st) == 2 &&
+			 ykds_version_minor(st) >= 2))) {
+		unsigned int serial;
+		if (! yk_get_serial(yk, 0, 0, &serial)) {
+			printf ("Failed to read serial number (serial-api-visible disabled?).\n");
+
+		} else {
+			printf ("Serial number : %i\n", serial);
+		}
+	}
+
+	printf ("\n");
 
 	if (infname) {
 		if (strcmp(infname, "-") == 0)
