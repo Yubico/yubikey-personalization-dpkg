@@ -1,6 +1,7 @@
 yubikey-personalization (1.5.0-1) unstable; urgency=low
 
   * New upstream release
+  * Adjust install rules for new binary, ykchalresp.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Wed, 09 Mar 2011 20:06:30 +0100
 
