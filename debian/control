@@ -32,7 +32,7 @@ Homepage: http://code.google.com/p/yubikey-personalization/
 Package: libykpers-1-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libykpers-1-1 (= ${binary:Version})
 Description: Personalization tool for Yubikey OTP tokens
  Yubikeys are USB tokens that act like keyboards and generate one-time
  or static passwords.

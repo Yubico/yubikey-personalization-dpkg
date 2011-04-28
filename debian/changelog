@@ -5,6 +5,8 @@ yubikey-personalization (1.5.1-1) unstable; urgency=low
     node in order to both program USB tokens and use the
     challenge/response functionality.
   * Change build system to dh.
+  * Make libykpers-1-dev depend on libykpers-1-1 of the same version.
+    Thanks to Fredrik Thulin at Yubico for spotting this.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Thu, 28 Apr 2011 22:41:02 +0200
 
