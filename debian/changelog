@@ -4,6 +4,7 @@ yubikey-personalization (1.5.1-1) unstable; urgency=low
   * Add udev rules to grant the console user access to the usbdevfs device
     node in order to both program USB tokens and use the
     challenge/response functionality.
+  * Change build system to dh.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Thu, 28 Apr 2011 22:41:02 +0200
 
