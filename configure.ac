@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.5.0],
+AC_INIT([yubikey-personalization], [1.5.1],
   [yubico-devel@googlegroups.com], [ykpers],
   [http://code.google.com/p/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,9 +36,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 5)
+AC_SUBST(LT_CURRENT, 6)
 AC_SUBST(LT_REVISION, 0)
-AC_SUBST(LT_AGE, 4)
+AC_SUBST(LT_AGE, 5)
 
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
@@ -62,7 +62,7 @@ fi
 
 AC_ARG_WITH([backend],
   [AS_HELP_STRING([--with-backend=ARG],
-    [use specific backend; 'libusb-1.0', 'libusb' or 'osx'])],
+    [use specific backend; 'libusb-1.0', 'libusb', 'osx' or 'windows'])],
     [],
     [with_backend=check])
 
@@ -71,6 +71,7 @@ if test "x$with_backend" = xcheck; then
    AC_MSG_CHECKING([for backend])
    case "$host" in
     *-darwin*) with_backend=osx ;;
+    *-mingw*) with_backend=windows ;;
     *) PKG_CHECK_EXISTS([libusb-1.0], 
        			   [with_backend=libusb-1.0],
 			   [with_backend=libusb])
@@ -110,11 +111,17 @@ if test x$with_backend = xosx; then
   LDFLAGS="$LDFLAGS -framework IOKit -framework CoreFoundation"
 fi
 
+if test x$with_backend = xwindows; then
+  LDFLAGS="$LDFLAGS -luuid -lsetupapi -lhid"
+fi
+
 AM_CONDITIONAL([BACKEND_LIBUSB], test x$with_backend = xlibusb)
 AM_CONDITIONAL([BACKEND_LIBUSB_1_0], test x$with_backend = xlibusb-1.0)
 AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
+AM_CONDITIONAL([BACKEND_WINDOWS], test x$with_backend = xwindows)
 
 gl_LD_VERSION_SCRIPT
+gl_VALGRIND_TESTS
 
 AC_CONFIG_FILES([
   Makefile

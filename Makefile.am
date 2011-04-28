@@ -37,7 +37,7 @@ AM_CPPFLAGS = -I$(srcdir)/ykcore -I$(srcdir)/rfc4634
 # The library.
 
 ykpers_includedir=$(includedir)/ykpers-1
-ykpers_include_HEADERS = ykpers.h ykcore/ykstatus.h ykcore/ykcore.h
+ykpers_include_HEADERS = ykpers.h ykcore/ykstatus.h ykcore/ykcore.h ykcore/ykdef.h
 
 lib_LTLIBRARIES = libykpers-1.la
 libykpers_1_la_SOURCES = ykpers.c ykpbkdf2.h ykpbkdf2.c
@@ -63,7 +63,7 @@ endif
 
 bin_PROGRAMS = ykpersonalize ykchalresp
 
-ykpersonalize_SOURCES = ykpersonalize.c
+ykpersonalize_SOURCES = ykpersonalize.c ykpers-args.h ykpers-args.c
 ykpersonalize_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
 
 ykchalresp_SOURCES = ykchalresp.c
@@ -96,7 +96,7 @@ release:
 		echo "Try this instead:"; \
 		echo "  make release USER=[GOOGLEUSERNAME] KEYID=[PGPKEYID]"; \
 		echo "For example:"; \
-		echo "  make release USER=simon@yubico.com KEYID=B9156397"; \
+		echo "  make release USER=simon@yubico.com KEYID=2117364A"; \
 		exit 1; \
 	fi
 	@head -3 $(srcdir)/NEWS | grep -q "Version $(VERSION) .released `date -I`" || \

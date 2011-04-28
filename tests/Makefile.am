@@ -27,7 +27,7 @@
 
 # Self tests.
 
-AM_LDFLAGS = -no-install
+AM_LDFLAGS = -no-install -static
 AM_CFLAGS=-I$(srcdir)/.. -I$(srcdir)/../ykcore
 LDADD = ../libykpers-1.la
 
@@ -37,5 +37,6 @@ ctests = selftest$(EXEEXT) test_args_to_config$(EXEEXT) test_key_generation$(EXE
 check_PROGRAMS = $(ctests)
 TESTS = $(ctests)
 
-test_args_to_config_LDADD = ../ykpersonalize.o $(LDADD) $(ykpersonalize_LDADD)
-test_args_to_config_LDFLAGS = -z muldefs
+test_args_to_config_LDADD = ../ykpers-args.o $(LDADD) $(ykpersonalize_LDADD)
+
+TESTS_ENVIRONMENT = $(VALGRIND)

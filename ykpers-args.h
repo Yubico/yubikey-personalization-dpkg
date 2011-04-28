@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008, 2011, Yubico AB
+ * Copyright (c) 2008, 2009, 2010, 2011, Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,52 +28,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#error "To be implemented!"
+#ifndef YKPERS_ARGS_H
+#define YKPERS_ARGS_H
 
-#include "ykcore.h"
-#include "ykdef.h"
-#include "ykcore_backend.h"
+const char *usage;
 
-int _ykusb_start(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
+int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
+		   const char **infname, const char **outfname,
+		   bool *autocommit, char *salt,
+		   YK_STATUS *st, bool *verbose,
+		   unsigned char *access_code, bool *use_access_code,
+		   bool *aesviahash,
+		   int *exit_code);
 
-int _ykusb_stop(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
+void report_yk_error();
 
-void * _ykusb_open_device(int vendor_id, int product_id)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return NULL;
-}
-
-int _ykusb_close_device(void *yk)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_read(void *dev, int report_type, int report_number,
-		char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_write(void *dev, int report_type, int report_number,
-		 char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-const char *_ykusb_strerror(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
+#endif
