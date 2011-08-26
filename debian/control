@@ -20,6 +20,7 @@ Homepage: http://code.google.com/p/yubikey-personalization/
 Package: libykpers-1-1
 Architecture: any
 Section: libs
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Multi-Arch: same
 Description: Personalization tool for Yubikey OTP tokens
