@@ -5,6 +5,7 @@ yubikey-personalization (1.6.1-1) unstable; urgency=low
   * Update symbols file for new symbols upstream.
   * Multiarchify, bumping debhelper compat level and adjusting paths in
     install files.
+  * Use find rather than plain rm to nuke .la files.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Fri, 26 Aug 2011 08:13:24 +0200
 
