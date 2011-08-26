@@ -2,7 +2,7 @@ Source: yubikey-personalization
 Section: utils
 Priority: extra
 Maintainer: Tollef Fog Heen <tfheen@debian.org>
-Build-Depends: debhelper (>= 7.0.50), autotools-dev, libusb-1.0-0-dev, libyubikey-dev(>= 1.5), chrpath, pkg-config, dh-autoreconf
+Build-Depends: debhelper (>= 8.1.3~), autotools-dev, libusb-1.0-0-dev, libyubikey-dev(>= 1.5), chrpath, pkg-config, dh-autoreconf
 Standards-Version: 3.8.2
 Homepage: http://code.google.com/p/yubikey-personalization/
 
@@ -21,6 +21,7 @@ Package: libykpers-1-1
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Multi-Arch: same
 Description: Personalization tool for Yubikey OTP tokens
  Yubikeys are USB tokens that act like keyboards and generate one-time
  or static passwords.
