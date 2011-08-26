@@ -1,3 +1,9 @@
+yubikey-personalization (1.6.1-2) unstable; urgency=low
+
+  * New upstream release, hopefully fixing FTBFS-es.  Closes: #636190
+
+ -- Tollef Fog Heen <tfheen@debian.org>  Fri, 26 Aug 2011 08:13:24 +0200
+
 yubikey-personalization (1.5.1-1) unstable; urgency=low
 
   * New upstream version.
