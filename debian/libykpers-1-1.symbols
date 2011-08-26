@@ -73,3 +73,6 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  yk_get_serial@LIBYKPERS_1.5 1.5.0
  yk_read_response_from_key@LIBYKPERS_1.5 1.5.0
  yk_wait_for_key_status@LIBYKPERS_1.5 1.5.0
+ LIBYKPERS_1.6@LIBYKPERS_1.6 1.6.1
+ ykp_get_oath_imf@LIBYKPERS_1.6 1.6.1
+ ykp_set_oath_imf@LIBYKPERS_1.6 1.6.1
