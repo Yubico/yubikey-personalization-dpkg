@@ -1,4 +1,4 @@
-yubikey-personalization (1.6.1-2) unstable; urgency=low
+yubikey-personalization (1.6.1-1) unstable; urgency=low
 
   * New upstream release, hopefully fixing FTBFS-es.  Closes: #636190
 
