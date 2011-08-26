@@ -1,6 +1,7 @@
 yubikey-personalization (1.6.1-1) unstable; urgency=low
 
   * New upstream release, hopefully fixing FTBFS-es.  Closes: #636190
+  * Drop docs no longer present in upstream tarball.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Fri, 26 Aug 2011 08:13:24 +0200
 
