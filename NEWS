@@ -1,5 +1,34 @@
 Yubikey-personalize NEWS -- History of user-visible changes.     -*- outline -*-
 
+* Version 1.6.1 (released 2011-08-15)
+
+** Fix test_args_to_config crash on some platform.
+The problem was due to mixing PIC and non-PIC object code.
+
+* Version 1.6.0 (released 2011-07-20)
+
+** Accept firmware version 2.3.x too.
+
+** ykpersonalize: New parameter -oath-imf for OATH Initial Moving Factor.
+Contributed by Frank Cusack <frank@google.com>.
+
+** libykpers: New apis for setting/getting OATH Initial Moving Factor.
+The APIs are ykp_set_oath_imf and ykp_get_oath_imf.
+
+* Version 1.5.2 (released 2011-05-10)
+
+** Added an udev file.
+Use --with-udevrulesdir=/lib/udev/rules.d or similar.  Contributed by
+Tollef Fog Heen.
+
+** Improve and distribute ykpers4win.mk.
+
+** Cleanup native Windows backend code.
+
+** Fix coredump for challenges of 128 characters in hex decoding.
+
+** Demand that slot choosing parameters comes first on command line.
+
 * Version 1.5.1 (released 2011-04-11)
 
 ** Added native Windows backend.

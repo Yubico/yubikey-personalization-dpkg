@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.5.1],
+AC_INIT([yubikey-personalization], [1.6.1],
   [yubico-devel@googlegroups.com], [ykpers],
   [http://code.google.com/p/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,9 +36,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 6)
-AC_SUBST(LT_REVISION, 0)
-AC_SUBST(LT_AGE, 5)
+AC_SUBST(LT_CURRENT, 7)
+AC_SUBST(LT_REVISION, 1)
+AC_SUBST(LT_AGE, 6)
 
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
@@ -121,9 +121,8 @@ AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
 AM_CONDITIONAL([BACKEND_WINDOWS], test x$with_backend = xwindows)
 
 AC_ARG_WITH([udevrulesdir],
-        AS_HELP_STRING([--with-udevrulesdir=DIR], [Diectory for udev rules]),
-        [],
-        [])
+  AS_HELP_STRING([--with-udevrulesdir=DIR], [Directory for udev rules]),
+  [], [])
 AC_SUBST([udevrulesdir], [$with_udevrulesdir])
 
 gl_LD_VERSION_SCRIPT
@@ -145,4 +144,5 @@ AC_MSG_NOTICE([summary of build options:
   Compiler:         ${CC}
   Library types:    Shared=${enable_shared}, Static=${enable_static}
   USB backend:      ${with_backend}
+  udev rules:       ${with_udevrulesdir:-N/A}
 ])

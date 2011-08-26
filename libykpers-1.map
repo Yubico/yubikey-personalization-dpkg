@@ -1,5 +1,5 @@
 # Written by Simon Josefsson <simon@yubico.com>.
-# Copyright (c) 2008, 2009 Yubico AB
+# Copyright (c) 2008, 2009, 2011 Yubico AB
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -118,3 +118,11 @@ LIBYKPERS_1.5 {
   yk_get_serial;
 # Variables:
 } LIBYKPERS_1.4;
+
+LIBYKPERS_1.6 {
+  global:
+# Functions:
+  ykp_set_oath_imf;
+  ykp_get_oath_imf;
+# Variables:
+} LIBYKPERS_1.5;

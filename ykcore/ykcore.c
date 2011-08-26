@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008, 2009, 2010, Yubico AB
+ * Copyright (c) 2008, 2009, 2010, 2011, Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -106,7 +106,8 @@ int yk_check_firmware_version(YK_KEY *k)
 	      (st.versionMajor == 2 &&
 	       (st.versionMinor == 0 ||
 		st.versionMinor == 1 ||
-		st.versionMinor == 2)))) {
+		st.versionMinor == 2 ||
+		st.versionMinor == 3)))) {
 		yk_errno = YK_EFIRMWARE;
 		return 0;
 	}
@@ -588,7 +589,7 @@ void _yk_hexdump(void *buffer, int size)
        unsigned char *p = buffer;
        int i;
        for (i = 0; i < size; i++) {
-               fprintf(stderr, "\\x%02x", *p);
+               fprintf(stderr, "%02x ", *p);
                p++;
       }
       fprintf(stderr, "\n");
