@@ -250,8 +250,13 @@ int * const _yk_errno_location(void)
 
 	if (tsd_init == 0) {
 		if ((rc = YK_TSD_INIT(errno_key, free)) == 0) {
-			YK_TSD_SET(errno_key, calloc(1, sizeof(int)));
-			tsd_init = 1;
+			void *p = calloc(1, sizeof(int));
+			if (!p) {
+				tsd_init = -1;
+			} else {
+				YK_TSD_SET(errno_key, p);
+				tsd_init = 1;
+			}
 		} else {
 			tsd_init = -1;
 		}
@@ -425,6 +430,9 @@ int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
 	memset(buf, 0, bufsize);
 	*bytes_read = 0;
 
+#ifdef YK_DEBUG
+	fprintf(stderr, "YK_DEBUG: Read %i bytes from YubiKey :\n", expect_bytes);
+#endif
 	/* Wait for the key to turn on RESP_PENDING_FLAG */
 	if (! yk_wait_for_key_status(yk, slot, flags, 1000, true, RESP_PENDING_FLAG, (char *) &data))
 		return 0;
@@ -440,7 +448,9 @@ int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
 
 		if (!_ykusb_read(yk, REPORT_TYPE_FEATURE, 0, (char *)data, FEATURE_RPT_SIZE))
 			return 0;
-
+#ifdef YK_DEBUG
+		_yk_hexdump(data, FEATURE_RPT_SIZE);
+#endif
 		if (data[FEATURE_RPT_SIZE - 1] & RESP_PENDING_FLAG) {
 			/* The lower five bits of the status byte has the response sequence
 			 * number. If that gets reset to zero we are done.
@@ -523,6 +533,9 @@ int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount)
 	if (! yk_wait_for_key_status(yk, slot, 0, 1000, false, SLOT_WRITE_FLAG, NULL))
 		return 0;
 	*/
+#ifdef YK_DEBUG
+	fprintf(stderr, "YK_DEBUG: Write %i bytes to YubiKey :\n", bufcount);
+#endif
 	for (seq = 0; ptr < end; seq++) {
 		int all_zeros = 1;
 		/* Ignore parts that are all zeroes except first and last
@@ -543,7 +556,9 @@ int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount)
 		if (! yk_wait_for_key_status(yk, slot, 0, WAIT_FOR_WRITE_FLAG,
 					     false, SLOT_WRITE_FLAG, NULL))
 			return 0;
-
+#ifdef YK_DEBUG
+		_yk_hexdump(repbuf, FEATURE_RPT_SIZE);
+#endif
 		if (!_ykusb_write(yk, REPORT_TYPE_FEATURE, 0,
 				  (char *)repbuf, FEATURE_RPT_SIZE))
 			return 0;

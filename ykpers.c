@@ -553,7 +553,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 		       userdata);
 		/* XXX print OATH-HOTP fixed differently based on oath-fixed-modhex etc. */
 		writer(str_modhex_prefix,
-		       strlen(str_key_value_separator),
+		       strlen(str_modhex_prefix),
 		       userdata);
 		yubikey_modhex_encode(buffer, (char *)cfg->ykcore_config.fixed, cfg->ykcore_config.fixedSize);
 		writer(buffer, strlen(buffer), userdata);
@@ -568,7 +568,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 			writer("n/a", 3, userdata);
 		} else {
 			writer(str_hex_prefix,
-			       strlen(str_key_value_separator),
+			       strlen(str_hex_prefix),
 			       userdata);
 			yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.uid, UID_SIZE);
 			writer(buffer, strlen(buffer), userdata);
@@ -581,7 +581,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 		       strlen(str_key_value_separator),
 		       userdata);
 		writer(str_hex_prefix,
-		       strlen(str_key_value_separator),
+		       strlen(str_hex_prefix),
 		       userdata);
 		yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.key, KEY_SIZE);
 		if (key_bits_in_uid) {
@@ -596,7 +596,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 		       strlen(str_key_value_separator),
 		       userdata);
 		writer(str_hex_prefix,
-		       strlen(str_key_value_separator),
+		       strlen(str_hex_prefix),
 		       userdata);
 		yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.accCode, ACC_CODE_SIZE);
 		writer(buffer, strlen(buffer), userdata);
@@ -722,8 +722,13 @@ int * const _ykp_errno_location(void)
 
 	if (tsd_init == 0) {
 		if ((rc = YK_TSD_INIT(errno_key, free)) == 0) {
-			YK_TSD_SET(errno_key, calloc(1, sizeof(int)));
-			tsd_init = 1;
+			void *p = calloc(1, sizeof(int));
+			if (!p) {
+				tsd_init = -1;
+			} else {
+				YK_TSD_SET(errno_key, p);
+				tsd_init = 1;
+			}
 		} else {
 			tsd_init = -1;
 		}
