@@ -80,7 +80,7 @@ int parse_args(int argc, char **argv,
 	       bool *hmac, bool *may_block,
 	       int *exit_code)
 {
-	char c;
+	int c;
 	bool hex_encoded = false;
 
 	while((c = getopt(argc, argv, optstring)) != -1) {
@@ -173,7 +173,8 @@ int check_firmware(YK_KEY *yk, bool verbose)
 	}
 
 	if (ykds_version_major(st) < 2 ||
-	    ykds_version_minor(st) < 2) {
+	    (ykds_version_major(st) == 2
+	     && ykds_version_minor(st) < 2)) {
 		fprintf(stderr, "Challenge-response not supported before YubiKey 2.2.\n");
 		free(st);
 		return 0;
