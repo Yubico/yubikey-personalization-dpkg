@@ -1,0 +1,16 @@
+The recommended way to get the git repo of this package is to clone
+the git repository and then use gitpkg(1).
+
+For gitpkg to do its work best, you should have the following settings in .git/config:
+
+[gitpkg]
+	deb-export-hook = /usr/share/gitpkg/hooks/quilt-patches-deb-export-hook
+	pre-export-hook = /usr/share/gitpkg/hooks/pristine-tar-pre-export-hook
+        create-fake-orig = false
+        force-overwrite-orig = false
+
+After you have hacked on the source and committed, run gitpkg HEAD (or
+gitpkg $treeish) and you get a source package in
+../deb-packages/yubikey-personalization/.
+
+ -- Tollef Fog Heen <tfheen@debian.org>, Fri,  9 Dec 2011 23:24:53 +0100
