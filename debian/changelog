@@ -1,8 +1,9 @@
-yubikey-personalization (1.6.2-2) UNRELEASED; urgency=low
+yubikey-personalization (1.6.3-1) unstable; urgency=low
 
-  * Add link to git tree.
+  * New upstream release, this fixes #636190 for real.
+  * Add link to git tree
 
- -- Tollef Fog Heen <tfheen@debian.org>  Fri, 09 Dec 2011 23:23:21 +0100
+ -- Tollef Fog Heen <tfheen@debian.org>  Wed, 21 Dec 2011 16:19:59 +0100
 
 yubikey-personalization (1.6.2-1) unstable; urgency=low
 
