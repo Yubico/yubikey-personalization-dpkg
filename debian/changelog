@@ -1,4 +1,4 @@
-yubikey-personalization (1.6.4-1) UNRELEASED; urgency=low
+yubikey-personalization (1.6.4-1) unstable; urgency=low
 
   * New upstream version.
   * Make sure we actually install udev rules file, thanks to Fredrik
