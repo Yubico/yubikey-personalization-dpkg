@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2011, Yubico AB
+ * Copyright (c) 2008-2012 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,6 +113,8 @@ extern int yk_write_config(YK_KEY *k, YK_CONFIG *cfg, int confnum,
 			   unsigned char *acc_code);
 /* Write something to the YubiKey (a command that is). */
 extern int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount);
+
+extern int yk_force_key_update(YK_KEY *yk);
 
 /*************************************************************************
  *

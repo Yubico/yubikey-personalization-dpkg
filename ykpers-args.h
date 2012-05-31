@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008, 2009, 2010, 2011, Yubico AB
+ * Copyright (c) 2008-2012 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 
 const char *usage;
 
-int args_to_config(int argc, char **argv, YKP_CONFIG *cfg,
+int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		   const char **infname, const char **outfname,
 		   bool *autocommit, char *salt,
 		   YK_STATUS *st, bool *verbose,

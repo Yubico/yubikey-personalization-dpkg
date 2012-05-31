@@ -1,7 +1,7 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008, 2009, Yubico AB
- * Copyright (c) 2009, Christer Kaivo-oja <christer.kaivooja@gmail.com>
+ * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2009 Christer Kaivo-oja <christer.kaivooja@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -121,7 +121,8 @@ void *_ykusb_open_device(int vendor_id, int product_id)
 			yk_release();
 			return 0;
 		}
-		
+
+		yk_errno = 0;
 		return yk;
 	}
 	
