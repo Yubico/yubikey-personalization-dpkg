@@ -1,7 +1,8 @@
 yubikey-personalization (1.6.4-1) UNRELEASED; urgency=low
 
   * New upstream version.
-  * Make sure we actually install udev rules file.
+  * Make sure we actually install udev rules file, thanks to Fredrik
+    Thulin for the patch.
 
  -- Tollef Fog Heen <tfheen@debian.org>  Thu, 31 May 2012 23:19:29 +0200
 
