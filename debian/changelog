@@ -1,3 +1,9 @@
+yubikey-personalization (1.6.4-1) UNRELEASED; urgency=low
+
+  * New upstream version.
+
+ -- Tollef Fog Heen <tfheen@debian.org>  Thu, 31 May 2012 23:19:29 +0200
+
 yubikey-personalization (1.6.3-1) unstable; urgency=low
 
   * New upstream release, this fixes #636190 for real.
