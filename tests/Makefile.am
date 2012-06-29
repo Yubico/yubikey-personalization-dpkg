@@ -27,11 +27,11 @@
 
 # Self tests.
 
-AM_LDFLAGS = -no-install -static
+AM_LDFLAGS = -no-install
 AM_CFLAGS=-I$(srcdir)/.. -I$(srcdir)/../ykcore
-LDADD = ../libykpers-1.la
+LDADD = ../libykpers-1.la $(LTLIBYUBIKEY)
 
-ctests = selftest$(EXEEXT) test_args_to_config$(EXEEXT) test_key_generation$(EXEEXT)
+ctests = selftest test_args_to_config test_key_generation test_ndef_construction
 check_PROGRAMS = $(ctests)
 TESTS = $(ctests)
 
