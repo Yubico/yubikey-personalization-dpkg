@@ -1,4 +1,4 @@
-yubikey-personalization (1.7.0-1) UNRELEASED; urgency=low
+yubikey-personalization (1.7.0-1) unstable; urgency=low
 
   * New upstream version
   * Add Fredrik and Simon to uploaders as well as DM-Upload-Allowed: yes
