@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-LIBYUBIKEYVERSION=1.9
+LIBYUBIKEYVERSION=1.10
 PROJECT=yubikey-personalization
 PACKAGE=ykpers
 
@@ -67,16 +67,21 @@ ykpers4win32:
 ykpers4win64:
 	$(MAKE) -f ykpers4win.mk ykpers4win ARCH=64 HOST=x86_64-w64-mingw32 CHECK=check
 
+ykpers4win32mingw32:
+	$(MAKE) -f ykpers4win.mk ykpers4win ARCH=32 HOST=i586-mingw32msvc CHECK=check CC=i586-mingw32msvc-gcc CFLAGS=-I/usr/i586-mingw32msvc/include/ddk/
+
 upload-ykpers4win:
 	gpg --detach-sign --default-key $(PGPKEYID) \
 		$(PACKAGE)-$(VERSION)-win$(BITS).zip
 	gpg --verify $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig
 	googlecode_upload.py \
 	 -s "OpenPGP signature for $(PACKAGE)-$(VERSION)-win$(BITS).zip." \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig \
+	 -l OpSys-Windows
 	googlecode_upload.py \
 	 -s "Windows $(BITS)-bit binaries of $(PACKAGE) $(VERSION)" \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION)-win$(BITS).zip \
+	 -l OpSys-Windows,Type-Executable
 
 upload-ykpers4win32:
 	$(MAKE) -f ykpers4win.mk upload-ykpers4win BITS=32

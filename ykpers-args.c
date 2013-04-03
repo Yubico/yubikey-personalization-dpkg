@@ -37,10 +37,10 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <ykcore_lcl.h>
 #include <ykpers.h>
 #include <yubikey.h> /* To get yubikey_modhex_encode and yubikey_hex_encode */
 #include <ykdef.h>
+#include "ykpers-args.h"
 
 #define YUBICO_OATH_VENDOR_ID_HEX	0xe1	/* UB as hex */
 #define YUBICO_HOTP_EVENT_TOKEN_TYPE	0x63	/* HE as hex */
@@ -60,6 +60,7 @@ const char *usage =
 "          are set by default.\n"
 "-x        swap the configuration in slot 1 and 2.  This is for YubiKey 2.3\n"
 "          and newer only\n"
+"-z        delete the configuration in slot 1 or 2.\n"
 "-sFILE    save configuration to FILE instead of key.\n"
 "          (if FILE is -, send to stdout)\n"
 "-iFILE    read configuration from FILE.\n"
@@ -68,8 +69,16 @@ const char *usage =
 "          char hex value (not modhex)\n"
 "-cXXX..   A 12 char hex value (not modhex) to use as access code for programming\n"
 "          (this does NOT SET the access code, that's done with -oaccess=)\n"
-"-nXXX..   Write NDEF type 2 URI to YubiKey NEO, must be used on it's own\n"
-"-tXXX..   Write NDEF type 2 text to YubiKey NEO, must be used on it's own\n"
+"-nXXX..   Write NDEF type 2 URI to YubiKey NEO, must be used with -1 or -2\n"
+"-tXXX..   Write NDEF type 2 text to YubiKey NEO, must be used with -1 or -2\n"
+"-mMODE    Set the USB operation mode of the YubiKey NEO.\n"
+"          Possible MODE arguments are:\n"
+"          0                   HID device only.\n"
+"          1                   CCID device only.\n"
+"          2                   HID/CCID composite device.\n"
+"          Add 80 to set MODE_FLAG_EJECT, for example: 81\n"
+"-S0605..  Set the scanmap to use with the YubiKey NEO. Must be 45 unique bytes,\n"
+"          in hex.  Use with no argument to reset to the default.\n"
 "-oOPTION  change configuration option.  Possible OPTION arguments are:\n"
 "          salt=ssssssss       Salt to be used when deriving key from a\n"
 "                              password.  If none is given, a unique random\n"
@@ -139,52 +148,20 @@ const char *usage =
 "          [-]allow-update        set/clear ALLOW_UPDATE\n"
 "          [-]dormant             set/clear DORMANT\n"
 "\n"
+"          Extended flags for firmware version 2.4/3.1 and above:\n"
+"          [-]led-inv             set/clear LED_INV\n"
+"\n"
 "-y        always commit (do not prompt)\n"
 "\n"
 "-v        verbose\n"
 "-h        help (this text)\n"
 ;
-const char *optstring = "u12xa:c:n:t:hi:o:s:vy";
+const char *optstring = "u12xza:c:n:t:hi:o:s:vym:S::";
 
-static const YK_CONFIG default_config1 = {
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* fixed */
-        { 0, 0, 0, 0, 0, 0 },   /* uid */
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* key */
-        { 0, 0, 0, 0, 0, 0 },   /* accCode */
-        0,                      /* fixedSize */
-        0,                      /* extFlags */
-        TKTFLAG_APPEND_CR,      /* tktFlags */
-        0,                      /* cfgFlags */
-        0,                      /* ctrOffs */
-        0                       /* crc */
-};
-
-static const YK_CONFIG default_config2 = {
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* fixed */
-        { 0, 0, 0, 0, 0, 0 },   /* uid */
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* key */
-        { 0, 0, 0, 0, 0, 0 },   /* accCode */
-        0,                      /* fixedSize */
-        0,                      /* extFlags */
-        TKTFLAG_APPEND_CR,      /* tktFlags */
-        /* cfgFlags */
-        CFGFLAG_STATIC_TICKET | CFGFLAG_STRONG_PW1 | CFGFLAG_STRONG_PW2 | CFGFLAG_MAN_UPDATE,
-        0,                      /* ctrOffs */
-        0                       /* crc */
-};
-
-static const YK_CONFIG default_update = {
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* fixed */
-        { 0, 0, 0, 0, 0, 0 },   /* uid */
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, /* key */
-        { 0, 0, 0, 0, 0, 0 },   /* accCode */
-        0,                      /* fixedSize */
-        EXTFLAG_ALLOW_UPDATE,   /* extFlags */
-        TKTFLAG_APPEND_CR,      /* tktFlags */
-        0,                      /* cfgFlags */
-        0,                      /* ctrOffs */
-        0                       /* crc */
-};
+static int _set_fixed(char *opt, YKP_CONFIG *cfg);
+static int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src);
+static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, uint32_t mui);
+static int _set_oath_id(char *opt, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *yk, YK_STATUS *st);
 
 static int hex_modhex_decode(unsigned char *result, size_t *resultlen,
 			     const char *str, size_t strl,
@@ -225,7 +202,7 @@ static int hex_modhex_decode(unsigned char *result, size_t *resultlen,
 	return 0;
 }
 
-void report_yk_error()
+void report_yk_error(void)
 {
 	if (ykp_errno)
 		fprintf(stderr, "Yubikey personalization error: %s\n",
@@ -254,7 +231,8 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		   YK_STATUS *st, bool *verbose,
 		   unsigned char *access_code, bool *use_access_code,
 		   bool *aesviahash, char *ndef_type, char *ndef,
-		   int *exit_code)
+		   unsigned char *usb_mode, bool *zap,
+		   unsigned char *scan_bin, int *exit_code)
 {
 	int c;
 	const char *aeshash = NULL;
@@ -265,10 +243,13 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 	bool swap_seen = false;
 	bool update_seen = false;
 	bool ndef_seen = false;
+	bool usb_mode_seen = false;
+	bool scan_map_seen = false;
+	struct config_st *ycfg;
 
 	ykp_configure_version(cfg, st);
 
-	struct config_st *ycfg = (struct config_st *) ykp_core_config(cfg);
+	ycfg = (struct config_st *) ykp_core_config(cfg);
 
 	while((c = getopt(argc, argv, optstring)) != -1) {
 		if (c == 'o') {
@@ -324,6 +305,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 			break;
 		case '1':
 		case '2': {
+				int command;
 				if (slot_chosen) {
 					fprintf(stderr, "You may only choose slot (-1 / -2) once.\n");
 					*exit_code = 1;
@@ -339,14 +321,9 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 					*exit_code = 1;
 					return 0;
 				}
-				if (ndef_seen) {
-					fprintf(stderr, "Slot (-1 / -2) can not be combined with ndef (-n)\n");
-					*exit_code = 1;
-					return 0;
-				}
-				int command;
+				ykp_set_tktflag_APPEND_CR(cfg, true);
 				if (update_seen) {
-					memcpy(ycfg, &default_update, sizeof(default_update));
+					ykp_set_extflag_ALLOW_UPDATE(cfg, true);
 					if(c == '1') {
 						command = SLOT_UPDATE1;
 					} else if(c == '2') {
@@ -354,10 +331,13 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 					}
 				} else if (c == '1') {
 					command = SLOT_CONFIG;
-					memcpy(ycfg, &default_config1, sizeof(default_config1));
 				} else if (c == '2') {
 					command = SLOT_CONFIG2;
-					memcpy(ycfg, &default_config2, sizeof(default_config2));
+					ykp_set_cfgflag_STATIC_TICKET(cfg, true);
+					ykp_set_cfgflag_STRONG_PW1(cfg, true);
+					ykp_set_cfgflag_STRONG_PW2(cfg, true);
+					ykp_set_cfgflag_MAN_UPDATE(cfg, true);
+
 				}
 				if (!ykp_configure_command(cfg, command))
 					return 0;
@@ -365,30 +345,24 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 				break;
 			}
 		case 'x':
-			if (slot_chosen) {
-				fprintf(stderr, "You can not use slot swap with a chosen slot (-1 / -2).\n");
+			if (slot_chosen || option_seen || update_seen || ndef_seen || *zap || usb_mode_seen || scan_map_seen) {
+				fprintf(stderr, "Slot swap (-x) can not be used with other options.\n");
 				*exit_code = 1;
 				return 0;
 			}
-			if (option_seen) {
-				fprintf(stderr, "You must set slot swap before any options (-o).\n");
-				*exit_code = 1;
-				return 0;
-			}
-			if (update_seen) {
-				fprintf(stderr, "Update (-u) and swap (-x) can't be combined.\n");
-				*exit_code = 1;
-				return 0;
-			}
-			if (ndef_seen) {
-				fprintf(stderr, "Swap (-x) can not be combined with ndef (-n).\n");
-				*exit_code = 1;
-				return 0;
-			}
+
 			if (!ykp_configure_command(cfg, SLOT_SWAP)) {
 				return 0;
 			}
 			swap_seen = true;
+			break;
+		case 'z':
+			if (swap_seen || update_seen || ndef_seen || usb_mode_seen || scan_map_seen) {
+				fprintf(stderr, "Zap (-z) can only be used with a slot (-1 / -2).\n");
+				*exit_code = 1;
+				return 0;
+			}
+			*zap = true;
 			break;
 		case 'i':
 			*infname = optarg;
@@ -421,22 +395,94 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		}
 		case 't':
 			*ndef_type = 'T';
-		case 'n':
-			if(!*ndef_type) {
-				*ndef_type = 'U';
-			}
-			if (slot_chosen || swap_seen || update_seen || option_seen) {
-				fprintf(stderr, "Ndef (-n/-t) must be used on it's own.\n");
+		case 'n': {
+				  int command;
+				  if(!*ndef_type) {
+					  *ndef_type = 'U';
+				  }
+				  if (swap_seen || update_seen || option_seen || *zap || usb_mode_seen || scan_map_seen) {
+					  fprintf(stderr, "Ndef (-n/-t) can only be used with a slot (-1/-2).\n");
+					  *exit_code = 1;
+					  return 0;
+				  }
+				  if(ykp_command(cfg) == SLOT_CONFIG) {
+					  command = SLOT_NDEF;
+				  } else if(ykp_command(cfg) == SLOT_CONFIG2) {
+					  command = SLOT_NDEF2;
+				  } else {
+					  command = SLOT_NDEF;
+				  }
+				  if (!ykp_configure_command(cfg, command)) {
+					  return 0;
+				  }
+				  memcpy(ndef, optarg, strlen(optarg));
+				  ndef_seen = true;
+				  break;
+			  }
+		case 'm':
+			if(slot_chosen || swap_seen || update_seen || option_seen || ndef_seen || *zap || scan_map_seen) {
+				fprintf(stderr, "USB mode (-m) can not be combined with other options.\n");
 				*exit_code = 1;
 				return 0;
 			}
-			if (!ykp_configure_command(cfg, SLOT_NDEF)) {
+			if(optarg[1] != '\0') {
+				*usb_mode = (optarg[0] - '0') << 4;
+				optarg++;
+			}
+			if(optarg[1] == '\0') {
+				int mode = optarg[0] - '0';
+				if(mode >= 0 && mode < MODE_MASK) {
+					*usb_mode |= mode;
+					usb_mode_seen = true;
+				}
+			}
+			/* Only true if we've parsed a valid USB mode number */
+			if(!usb_mode_seen) {
+				fprintf(stderr, "Invalid USB operation mode.\n");
+				*exit_code = 1;
 				return 0;
 			}
-			memcpy(ndef, optarg, strnlen(optarg, 128));
-			ndef_seen = true;
+			if (!ykp_configure_command(cfg, SLOT_DEVICE_CONFIG))
+				return 0;
+
+			break;
+		case 'S':
+			{
+				size_t scanlength = strlen(SCAN_MAP);
+				if(slot_chosen || swap_seen || update_seen || option_seen || ndef_seen || *zap || usb_mode_seen) {
+					fprintf(stderr, "Scanmap (-S) can not be combined with other options.\n");
+					*exit_code = 1;
+					return 0;
+				}
+				if(optarg) {
+					size_t scanbinlen;
+					size_t scanlen = strlen (optarg);
+					int rc = hex_modhex_decode(scan_bin, &scanbinlen,
+							optarg, scanlen,
+							scanlength * 2, scanlength * 2,
+							false);
+
+					if (rc <= 0) {
+						fprintf(stderr,
+								"Invalid scanmap string %s\n",
+								optarg);
+						*exit_code = 1;
+						return 0;
+					}
+				} else {
+					memset(scan_bin, 0, scanlength);
+				}
+				scan_map_seen = true;
+			}
+			if (!ykp_configure_command(cfg, SLOT_SCAN_MAP))
+				return 0;
 			break;
 		case 'o':
+			if (*zap) {
+				fprintf(stderr, "No options can be given with zap (-z).\n");
+				*exit_code = 1;
+				return 0;
+			}
 			if (strncmp(optarg, "salt=", 5) == 0)
 				salt = strdup(optarg+5);
 			else if (strncmp(optarg, "fixed=", 6) == 0) {
@@ -593,10 +639,11 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 			EXTFLAG("serial-btn-visible", SERIAL_BTN_VISIBLE)
 			EXTFLAG("serial-usb-visible", SERIAL_USB_VISIBLE)
 			EXTFLAG("serial-api-visible", SERIAL_API_VISIBLE)
-      EXTFLAG("use-numeric-keypad", USE_NUMERIC_KEYPAD)
-      EXTFLAG("fast-trig", FAST_TRIG)
+			EXTFLAG("use-numeric-keypad", USE_NUMERIC_KEYPAD)
+			EXTFLAG("fast-trig", FAST_TRIG)
 			EXTFLAG("allow-update", ALLOW_UPDATE)
-      EXTFLAG("dormant", DORMANT)
+			EXTFLAG("dormant", DORMANT)
+			EXTFLAG("led-inv", LED_INV)
 #undef EXTFLAG
 			else {
 				fprintf(stderr, "Unknown option '%s'\n",
@@ -620,7 +667,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		}
 	}
 
-	if (!slot_chosen && !ndef_seen) {
+	if (!slot_chosen && !ndef_seen && !swap_seen && !usb_mode_seen && !scan_map_seen) {
 		fprintf(stderr, "A slot must be chosen with -1 or -2.\n");
 		*exit_code = 1;
 		return 0;
@@ -675,14 +722,14 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 	return 1;
 }
 
-int _set_fixed(char *optarg, YKP_CONFIG *cfg) {
-	const char *fixed = optarg;
+static int _set_fixed(char *opt, YKP_CONFIG *cfg) {
+	const char *fixed = opt;
 	size_t fixedlen = strlen (fixed);
 	unsigned char fixedbin[256];
 	size_t fixedbinlen = 0;
 	int rc = hex_modhex_decode(fixedbin, &fixedbinlen,
 				   fixed, fixedlen,
-				   0, 16, true);
+				   0, 32, true);
 	if (rc <= 0)
 		return 0;
 
@@ -692,7 +739,7 @@ int _set_fixed(char *optarg, YKP_CONFIG *cfg) {
 
 
 /* re-format decimal 12345678 into 'hex' 0x12 0x34 0x56 0x78 */
-int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src)
+static int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src)
 {
 	uint8_t *end;
 
@@ -709,7 +756,7 @@ int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src)
 }
 
 /* For details, see YubiKey Manual 2010-09-16 section 5.3.4 - OATH-HOTP Token Identifier */
-int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, uint32_t mui)
+static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, uint32_t mui)
 {
 	uint8_t buf[8 + 1];
 
@@ -732,7 +779,7 @@ int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, 
 	return 1;
 }
 
-int _set_oath_id(char *optarg, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *yk, YK_STATUS *st) {
+static int _set_oath_id(char *opt, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *yk, YK_STATUS *st) {
 	/* For details, see YubiKey Manual 2010-09-16 section 5.3.4 - OATH-HOTP Token Identifier */
 	if (!(ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP) {
 		fprintf(stderr,
@@ -745,10 +792,10 @@ int _set_oath_id(char *optarg, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *
 	if (! ykp_set_extflag_SERIAL_API_VISIBLE(cfg, true))
 		return 0;
 
-	if (strlen(optarg) > 7) {
-		if (_set_fixed(optarg + 8, cfg) != 1) {
+	if (strlen(opt) > 7) {
+		if (_set_fixed(opt + 8, cfg) != 1) {
 			fprintf(stderr,
-				"Invalid OATH token identifier %s supplied with oath-id=.\n", optarg + 8
+				"Invalid OATH token identifier %s supplied with oath-id=.\n", opt + 8
 				);
 			return 0;
 		}

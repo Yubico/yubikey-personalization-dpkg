@@ -39,7 +39,7 @@
 int _ykusb_start(void);
 int _ykusb_stop(void);
 
-void * _ykusb_open_device(int vendor_id, int product_id);
+void * _ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len);
 int _ykusb_close_device(void *);
 
 int _ykusb_read(void *dev, int report_type, int report_number,
@@ -47,6 +47,6 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 int _ykusb_write(void *dev, int report_type, int report_number,
 		 char *buffer, int buffer_size);
 
-const char *_ykusb_strerror();
+const char *_ykusb_strerror(void);
 
 #endif	/* __YKCORE_BACKEND_H_INCLUDED__ */

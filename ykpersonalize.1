@@ -1,4 +1,4 @@
-.\" Copyright (c) 2009-2012 Yubico AB
+.\" Copyright (c) 2009-2013 Yubico AB
 .\" Copyright (C) 2009, 2010 Tollef Fog Heen <tfheen@err.no>
 .\" All rights reserved.
 .\"
@@ -37,7 +37,8 @@ ykpersonalize - personalize YubiKey OTP tokens
 .SH SYNOPSIS
 .B ykpersonalize
 [\fI-1\fR | \fI-2\fR] [\fI-sfile\fR] [\fI-ifile\fR] [\fI-axxx\fR] [\fI-cxxx\fR] [\fI-ooption\fR]
-[\fI-y\fR] [\fI-v\fR] [\fI-h\fR] [\fI-n\fR] [\fI-t\fR] [\fI-u\fR] [\fI-x\fR]
+[\fI-y\fR] [\fI-v\fR] [\fI-h\fR] [\fI-n\fR] [\fI-t\fR] [\fI-u\fR] [\fI-x\fR] [\fI-z\fR] [\fI-m\fR]
+[\fI-S\fR]
 .\".SH DESCRIPTION
 .\" Add any additional description here
 .SH OPTIONS
@@ -50,13 +51,16 @@ manual:
 \fB\-1\fR
 change the first configuration.  This is the default and is
 normally used for true OTP generation.  In this configuration,
-TKTFLAG_APPEND_CR is set by default.
+the option flag \fB-oappend-cr\fR is set by default.
 .TP
 \fB\-2\fR
 change the second configuration.  This is for YubiKey II only and is
 then normally used for static key generation.  In this configuration,
-TKTFLAG_APPEND_CR, CFGFLAG_STATIC_TICKET, CFGFLAG_STRONG_PW1,
-CFGFLAG_STRONG_PW2 and CFGFLAG_MAN_UPDATE are set by default.
+the option flags \fB-oappend-cr\fR, \fB-ostatic-ticket\fR, \fB-ostrong-pw1\fR,
+\fB-ostrong-pw2\fR and \fB-oman-update\fR are set by default.
+.TP
+\fB-z\fR
+delete configuration in selected slot
 .TP
 \fB\-s\fIfile\fR
 save configuration to file instead of key.
@@ -67,7 +71,7 @@ read configuration from file.
 (if file is -, read from stdin)
 .TP
 \fB\-a\fIxxx\fR
-A 32 char (40 for OATH-HOTP and HMAC challenge-response) hex value (not modhex) of a fixed AES key to use.
+the secret key, 32 char (40 for OATH-HOTP and HMAC challenge-response) hex value (not modhex).
 .TP
 \fB\-c\fIxxx\fR
 A 12 char hex value (not modhex) to use as access code for
@@ -83,14 +87,15 @@ Salt to be used when deriving key from a password.
 If none is given, a unique random one will be generated.
 .TP
 \fBfixed\fR=\fIfffffffffff\fR
-The modhex \fIpublic identity\fR of the YubiKey, 0-16 characters long.
+The modhex \fIpublic identity\fR of the YubiKey, 0-32 characters long (encoding
+up to 16 bytes).
 It's possible to give the identity in hex as well, just prepend the
 value with `h:'. The fixed part is emitted before the OTP when the
 button on the YubiKey is pressed. It can be used as an identifier for
 the user, for example.
 .TP
 \fBuid\fR=\fIuuuuuu\fR
-The uid part of the generated OTP, in hex.
+The uid part of the generated OTP, also called \fIprivate identity\fR, in hex.
 Must be 12 characters long. The uid is 6 bytes of static data that is included
 (encrypted) in every OTP, and is used to validate that an OTP was in fact encrypted
 with the AES key shared between the YubiKey and the validation service. It cannot
@@ -124,11 +129,39 @@ Help
 \fBYubiKey NEO only\fR
 .RS
 .TP
+\fB-m mode\fR
+set the mode of operation for the YubiKey NEO.  0 for HID device only,
+1 for CCID device only and 2 for HID/CCID composite device.  To set the
+autoeject flag add 80, for example: 82.
+.TP
+\fB-S\fI0605...\fR
+set the scanmap to be used with the YubiKey NEO.  It must be 45 unique
+bytes as 90 characters.  Leave argument empty to reset to the YubiKey's default.
+The scanmap must be sent in the order:
+.br
+\fIcbdefghijklnrtuvCBDEFGHIJKLNRTUV0123456789!\\t\\r\fR.
+.br
+the default scanmap in the YubiKey is:
+.br
+\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f9195979899271e1f202122232425269e2b28\fR
+.br
+an example for simplified us dvorak would be:
+.br
+\fI0c110b071c180d0a0619130f120e09378c918b879c988d8a8699938f928e89b7271e1f202122232425269e2b28\fR
+.br
+or for a french azerty keyboard (digits are shifted):
+.br
+\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f9195979899a79e9fa0a1a2a3a4a5a6382b28\fR
+.br
+and a turkish example (has a dotless i instead of usual i):
+.br
+\fI06050708090a0b340d0e0f111517181986858788898a8b8c8d8e8f9195979899271e1f202122232425269e2b28\fR
+.TP
 \fB-n URI\fR
-Program NFC NDEF type 2 URI
+Program NFC NDEF URI
 .TP
 \fB-t text\fR
-Program NFC NDEF type 2 text
+Program NFC NDEF text
 .RE
 .TP
 \fBYubiKey 2.3 and above\fR
@@ -183,7 +216,7 @@ Set challenge-response mode.
 .SH Configuration flags
 [\-]\fBsend-ref\fR
 Send a reference string of all 16 modhex characters before the fixed
-part.  This can not be combined with the \fBstrong-pw2\fR flag.
+part.  This can not be combined with the \fB-ostrong-pw2\fR flag.
 .TP
 [\-]\fBpacing-10ms\fR
 Add a 10ms delay between key presses.
@@ -209,7 +242,13 @@ scroll-lock twice.  Not recommended for security reasons.
 .TP
 [\-]\fBshort-ticket\fR
 Limit the length of the static string to max 16 digits.  This flag
-only makes sense with the \fB-ostatic-ticket\fR option.
+only makes sense with the \fB-ostatic-ticket\fR option.  When
+\fB-oshort-ticket\fR is used without \fB-ostatic-ticket\fR it will
+program the YubiKey in "scan-code mode", in this mode the key sends
+the contents of fixed, uid and key as raw keyboard scancodes.  For
+example, by using the fixed string \fIh:8b080f0f122c9a12150f079e\fR in
+this mode it will send \fIHello World!\fR on a qwerty keyboard.  This
+mode sends raw scan codes, so output will differ between keyboard layouts.
 .TP
 [\-]\fBstrong-pw1\fR
 Upper-case the two first letters of the output string.  This is for
@@ -218,7 +257,7 @@ lowercase characters in a password and does not add any security.
 .TP
 [\-]\fBstrong-pw2\fR
 Replace the first eight characters of the modhex alphabet with the
-numbers 0 to 7.  Like \fBstrong-pw1\fR, this is intended to support
+numbers 0 to 7.  Like \fB-ostrong-pw1\fR, this is intended to support
 legacy systems.
 .TP
 [\-]\fBman-update\fR
@@ -242,7 +281,7 @@ When set, the fixed part is sent as modhex.
 \fBoath-id=m:OOTTUUUUUUUU\fR
 Configure OATH token id with a provided value.  See description of
 this option under the 2.2 section for details, but note that a YubiKey
-2.1 key can't report it's serial number and thus a token identifier value
+2.1 key can't report its serial number and thus a token identifier value
 must be specified.
 .TP
 \fBYubiKey 2.2 firmware and above\fR
@@ -262,13 +301,13 @@ The YubiKey will wait for the user to press the key (within 15 seconds) before
 answering the challenge.
 .TP
 [\-]\fBserial-btn-visible\fR
-The YubiKey will emit it's serial number if the button is pressed during power-up.
+The YubiKey will emit its serial number if the button is pressed during power-up.
 .TP
 [\-]\fBserial-usb-visible\fR
-The YubiKey will indicate it's serial number in the USB iSerial field.
+The YubiKey will indicate its serial number in the USB iSerial field.
 .TP
 [\-]\fBserial-api-visible\fR
-The YubiKey will allow it's serial number to be read using an API call.
+The YubiKey will allow its serial number to be read using an API call.
 .TP
 \fBoath-id[=m:OOTTUUUUUUUU]\fR
 Configure OATH token id with a provided value, or if used without a value use the
@@ -282,7 +321,7 @@ the serial number on the back of the YubiKey to an entry in a list of associated
 tokens for example.  Other encodings can be accomplished using the appropriate
 oath-fixed-modhex options.
 
-Note that the YubiKey must be programmed to allow reading it's serial number,
+Note that the YubiKey must be programmed to allow reading its serial number,
 otherwise automatic token id creation is not possible.
 
 See section "5.3.4 - OATH-HOTP Token Identifier" of the
@@ -303,6 +342,11 @@ Allow updating of certain parameters in a configuration at a later time.
 .TP
 [\-]\fBdormant\fR
 Hides/unhides a configuration stored in a YubiKey.
+.TP
+\fBYubiKey 2.4/3.1 firmware and above\fR
+.TP
+[\-]\fBled-inv\fR
+Inverts the behaviour of the led on the YubiKey.
 
 .SH OATH-HOTP Mode
 When using OATH-HOTP mode, a HMAC key of 160 bits (20 bytes, 40 chars of hex)

@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.7.0],
+AC_INIT([yubikey-personalization], [1.12.0],
   [yubico-devel@googlegroups.com], [ykpers],
   [http://code.google.com/p/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,11 +36,11 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 8)
+AC_SUBST(LT_CURRENT, 13)
 AC_SUBST(LT_REVISION, 0)
-AC_SUBST(LT_AGE, 7)
+AC_SUBST(LT_AGE, 12)
 
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([1.11.3 -Wall -Werror])
 AM_SILENT_RULES([yes])
 AC_PROG_CC
 
@@ -48,6 +48,10 @@ ACX_PTHREAD
 LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
+
+# required for newest autoconf
+m4_pattern_allow([AM_PROG_AR])
+AM_PROG_AR
 
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
@@ -122,16 +126,64 @@ AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
 AM_CONDITIONAL([BACKEND_WINDOWS], test x$with_backend = xwindows)
 
 AC_ARG_WITH([udevrulesdir],
-  AS_HELP_STRING([--with-udevrulesdir=DIR], [Directory for udev rules]),
+  AS_HELP_STRING([--with-udevrulesdir=DIR], [Install udev rules into this directory]),
   [], [])
 AC_SUBST([udevrulesdir], [$with_udevrulesdir])
+
+# It would be more clear to wrap this in AC_MSG_CHECKING and AC_MSG_RESULT, but
+# this works too. If udevrulesdir is set, check for udev >= 188, which should
+# have the ID_SECURITY_TOKEN tag in 70-uaccess.rules / 70-udev-acl-rules. If
+# a recent enough udev is not found, fall back to using the old
+# 70-yubikey.rules file.
+if test -n "$udevrulesdir"; then
+    PKG_CHECK_MODULES([UDEV], [udev >= 188],
+        udevrulesfile=69-yubikey.rules,
+        udevrulesfile=70-yubikey.rules,
+    )
+    AC_SUBST([udevrulesfile], [$udevrulesfile])
+fi
 
 gl_LD_VERSION_SCRIPT
 gl_VALGRIND_TESTS
 
+AC_ARG_ENABLE([gcc-warnings],
+  [AS_HELP_STRING([--enable-gcc-warnings],
+		  [turn on lots of GCC warnings (for developers)])],
+  [case $enableval in
+     yes|no) ;;
+     *)      AC_MSG_ERROR([bad value $enableval for gcc-warnings option]) ;;
+   esac
+   gl_gcc_warnings=$enableval],
+  [gl_gcc_warnings=no]
+)
+
+if test "$gl_gcc_warnings" = yes; then
+  nw="$nw -Wsystem-headers"         # Don't let system headers trigger warnings
+  nw="$nw -Wpadded"                 # Struct's arenot padded
+  nw="$nw -Wc++-compat"             # We don't care strongly about C++ compilers
+  nw="$nw -Wtraditional"            # Warns on #elif which we use often
+  nw="$nw -Wtraditional-conversion" # Too many warnings for now
+  nw="$nw -Wconversion"             # Too many warnings for now
+  nw="$nw -Wsuggest-attribute=pure" # Is it worth using attributes?
+
+  gl_MANYWARN_ALL_GCC([ws])
+  gl_MANYWARN_COMPLEMENT(ws, [$ws], [$nw])
+  for w in $ws; do
+    gl_WARN_ADD([$w])
+  done
+
+  gl_WARN_ADD([-fdiagnostics-show-option])
+fi
+
+AC_SUBST(YKPERS_VERSION_MAJOR, `echo $PACKAGE_VERSION | sed 's/\(.*\)\..*\..*/\1/g'`)
+AC_SUBST(YKPERS_VERSION_MINOR, `echo $PACKAGE_VERSION | sed 's/.*\.\(.*\)\..*/\1/g'`)
+AC_SUBST(YKPERS_VERSION_PATCH, `echo $PACKAGE_VERSION | sed 's/.*\..*\.\(.*\)/\1/g'`)
+AC_SUBST(YKPERS_VERSION_NUMBER, `printf "0x%02x%02x%02x" $YKPERS_VERSION_MAJOR $YKPERS_VERSION_MINOR $YKPERS_VERSION_PATCH`)
+
 AC_CONFIG_FILES([
   Makefile
   ykpers-1.pc
+  ykpers-version.h
   ykcore/Makefile
   tests/Makefile
 ])
@@ -139,11 +191,12 @@ AC_OUTPUT
 
 AC_MSG_NOTICE([summary of build options:
 
-  version:          ${VERSION} shared $LT_CURRENT:$LT_REVISION:$LT_AGE
+  version:          ${VERSION} shared $LT_CURRENT:$LT_REVISION:$LT_AGE major $YKPERS_VERSION_MAJOR minor $YKPERS_VERSION_MINOR patch $YKPERS_VERSION_PATCH number $YKPERS_VERSION_NUMBER
   Host type:        ${host}
   Install prefix:   ${prefix}
   Compiler:         ${CC}
   Library types:    Shared=${enable_shared}, Static=${enable_static}
   USB backend:      ${with_backend}
-  udev rules:       ${with_udevrulesdir:-N/A}
+  udev rules dir:   ${with_udevrulesdir:-N/A}
+  udev rules file:  ${udevrulesfile:-N/A}
 ])

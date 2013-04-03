@@ -1,5 +1,5 @@
 # Written by Richard Levitte <richard@levitte.org>.
-# Copyright (c) 2008-2012 Yubico AB
+# Copyright (c) 2008-2013 Yubico AB
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -33,14 +33,17 @@ SUBDIRS= ykcore . tests
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CPPFLAGS = -I$(srcdir)/ykcore -I$(srcdir)/rfc4634
+AM_CFLAGS = $(WARN_CFLAGS)
 
 # The library.
 
 ykpers_includedir=$(includedir)/ykpers-1
-ykpers_include_HEADERS = ykpers.h ykcore/ykstatus.h ykcore/ykcore.h ykcore/ykdef.h
+ykpers_include_HEADERS = ykpers.h ykpers-version.h
+ykpers_include_HEADERS += ykcore/ykstatus.h ykcore/ykcore.h ykcore/ykdef.h
+ykpers_include_HEADERS += ykpbkdf2.h
 
 lib_LTLIBRARIES = libykpers-1.la
-libykpers_1_la_SOURCES = ykpers.c ykpbkdf2.h ykpbkdf2.c
+libykpers_1_la_SOURCES = ykpers.c ykpers-version.c ykpbkdf2.c
 libykpers_1_la_SOURCES += rfc4634/hmac.c rfc4634/usha.c rfc4634/sha.h	\
 	rfc4634/sha1.c rfc4634/sha224-256.c rfc4634/sha384-512.c	\
 	rfc4634/sha-private.h
@@ -48,7 +51,7 @@ libykpers_1_la_SOURCES += ykpers-1.pc.in libykpers-1.map
 libykpers_1_la_LIBADD = $(LTLIBYUBIKEY) ./ykcore/libykcore.la
 libykpers_1_la_LDFLAGS = -no-undefined \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
-libykpers_1_la_DEPENDENCIES = libykpers-1.map
+EXTRA_libykpers_1_la_DEPENDENCIES = libykpers-1.map
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ykpers-1.pc
@@ -56,33 +59,38 @@ pkgconfig_DATA = ykpers-1.pc
 if HAVE_LD_VERSION_SCRIPT
 libykpers_1_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libykpers-1.map
 else
-libykpers_1_la_LDFLAGS += -export-symbols-regex '^(ykp|yk|ykds)_.*|_yk.*_errno_location'
+libykpers_1_la_LDFLAGS += -export-symbols-regex '^(ykp|yk|ykds|ykpers)_.*|_yk.*_errno_location'
 endif
 
 # The command line tools.
 
-bin_PROGRAMS = ykpersonalize ykchalresp
+bin_PROGRAMS = ykpersonalize ykchalresp ykinfo
 
 ykpersonalize_SOURCES = ykpersonalize.c ykpers-args.h ykpers-args.c
-ykpersonalize_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
+ykpersonalize_LDADD = ./libykpers-1.la $(LTLIBYUBIKEY)
 
 ykchalresp_SOURCES = ykchalresp.c
-ykchalresp_LDADD = ./libykpers-1.la ./ykcore/libykcore.la
+ykchalresp_LDADD = ./libykpers-1.la $(LTLIBYUBIKEY)
 
-dist_man1_MANS = ykpersonalize.1 ykchalresp.1
+ykinfo_SOURCES = ykinfo.c
+ykinfo_LDADD = ./libykpers-1.la $(LTLIBYUBIKEY)
+
+dist_man1_MANS = ykpersonalize.1 ykchalresp.1 ykinfo.1
 
 # Dist docs from wiki.
 EXTRA_DIST = doc/Compatibility.asciidoc doc/Make-Release.asciidoc doc/Read-Me.asciidoc doc/USB-Hid-Issue.asciidoc doc/Windows-Build.asciidoc
 
 # Dist contrib stuff.
-EXTRA_DIST += contrib/README contrib/programming.sh
+EXTRA_DIST += contrib/README contrib/programming.sh contrib/oath-unlock-reprogram.sh
 
 # Windows rules.
 EXTRA_DIST += ykpers4win.mk
 
+# udev rule files
+EXTRA_DIST += 69-yubikey.rules 70-yubikey.rules
 udevrulesdir=@udevrulesdir@
 dist_udevrules_DATA = \
-        70-yubikey.rules
+        @udevrulesfile@
 
 # Release
 
@@ -118,6 +126,8 @@ release:
 	mkdir -p ../releases/$(PACKAGE)/ && \
 		cp -v $(PACKAGE)-$(VERSION).tar.gz* ../releases/$(PACKAGE)/
 	googlecode_upload.py -s "OpenPGP signature for $(PACKAGE) $(VERSION)." \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz.sig
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz.sig \
+	 -l OpSys-All
 	googlecode_upload.py -s "$(PACKAGE) $(VERSION)" \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz 
+	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz \
+	 -l OpSys-All,Type-Source

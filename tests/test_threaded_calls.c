@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2011-2012 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,52 +28,66 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#error "To be implemented!"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <assert.h>
 
-#include "ykcore.h"
-#include "ykdef.h"
-#include "ykcore_backend.h"
+#ifdef _WIN32
+#include <windows.h>
+#include <errno.h>
+#define ALLOC_THREADS(size) HANDLE *threads = malloc(sizeof(HANDLE) * times)
+#define spawn_thread(thread, attr, start_routine, arg) thread = CreateThread(attr, 0, start_routine, arg, 0, NULL)
+#define join_thread(thread, retval) WaitForSingleObject(thread, INFINITE)
+#else
+#include <pthread.h>
+#define ALLOC_THREADS(size) pthread_t *threads = malloc(sizeof(pthread_t) * times)
+#define spawn_thread(thread, attr, start_routine, arg) pthread_create(&thread, attr, start_routine, arg)
+#define join_thread(thread, retval) pthread_join(thread, retval)
+#endif
+#define FREE_THREADS free(threads)
 
-int _ykusb_start(void)
+#include <ykpers.h>
+
+void *start_thread(void *arg)
 {
-	yk_errno = YK_ENOTYETIMPL;
+	if(!yk_init()) {
+		printf("failed to init usb..\n");
+		return NULL;
+	}
+	YK_STATUS *st = ykds_alloc();
+	YK_KEY *yk = 0;
+	yk_errno = 0;
+	ykp_errno = 0;
+
+	yk = yk_open_first_key();
+	if(yk != 0) {
+		yk_get_status(yk, st);
+		yk_close_key(yk);
+	}
+
+	ykds_free(st);
+	yk_release();
+}
+
+void _test_threaded_calls()
+{
+	int times = 5;
+	int i;
+	ALLOC_THREADS(times);
+
+	for(i = 0; i < times; i++) {
+		spawn_thread(threads[i], NULL, start_thread, NULL);
+		join_thread(threads[i], NULL);
+	}
+
+	FREE_THREADS;
+}
+
+int main(void)
+{
+	_test_threaded_calls();
+
 	return 0;
 }
 
-int _ykusb_stop(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-void * _ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return NULL;
-}
-
-int _ykusb_close_device(void *yk)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_read(void *dev, int report_type, int report_number,
-		char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_write(void *dev, int report_type, int report_number,
-		 char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-const char *_ykusb_strerror(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}

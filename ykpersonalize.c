@@ -58,6 +58,7 @@ int main(int argc, char **argv)
 	bool aesviahash = false;
 	bool use_access_code = false;
 	unsigned char access_code[256];
+	unsigned char scan_codes[sizeof(SCAN_MAP)];
 	YK_KEY *yk = 0;
 	YKP_CONFIG *cfg = ykp_alloc();
 	YK_STATUS *st = ykds_alloc();
@@ -66,7 +67,9 @@ int main(int argc, char **argv)
 	/* Options */
 	char *salt = NULL;
 	char ndef_string[128] = {0};
-	char ndef_type = NULL;
+	char ndef_type = 0;
+	unsigned char usb_mode = 0;
+	bool zap = false;
 
 	bool error = false;
 	int exit_code = 0;
@@ -108,7 +111,7 @@ int main(int argc, char **argv)
 	else
 		printf("Unconfigured\n");
 
-	if (!(yk_check_firmware_version(yk))) {
+	if (!(yk_check_firmware_version2(st))) {
 		if (yk_errno == YK_EFIRMWARE) {
 			printf("Unsupported firmware revision - some "
 			       "features may not be available\n"
@@ -127,7 +130,7 @@ int main(int argc, char **argv)
 			     st, &verbose,
 			     access_code, &use_access_code,
 			     &aesviahash, &ndef_type, ndef_string,
-			     &exit_code)) {
+			     &usb_mode, &zap, scan_codes, &exit_code)) {
 		goto err;
 	}
 
@@ -180,7 +183,7 @@ int main(int argc, char **argv)
 	if (inf) {
 		if (!ykp_read_config(cfg, reader, inf))
 			goto err;
-	} else if (! aesviahash && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
+	} else if (! aesviahash && ! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
 		char passphrasebuf[256]; size_t passphraselen;
 		fprintf(stderr, "Passphrase to create AES key: ");
 		fflush(stderr);
@@ -201,8 +204,14 @@ int main(int argc, char **argv)
 
 		if (ykp_command(cfg) == SLOT_SWAP) {
 			fprintf(stderr, "Configuration in slot 1 and 2 will be swapped\n");
-		} else if(ykp_command(cfg) == SLOT_NDEF) {
-			fprintf(stderr, "New NDEF URI will be written\n");
+		} else if(ykp_command(cfg) == SLOT_NDEF || ykp_command(cfg) == SLOT_NDEF2) {
+			fprintf(stderr, "New NDEF will be written as:\n%s\n", ndef_string);
+		} else if(ykp_command(cfg) == SLOT_DEVICE_CONFIG) {
+			fprintf(stderr, "The USB mode will be set to: 0x%x\n", usb_mode);
+		} else if(ykp_command(cfg) == SLOT_SCAN_MAP) {
+			fprintf(stderr, "A new scanmap will be written.\n");
+		} else if(zap) {
+			fprintf(stderr, "Configuration in slot %d will be deleted\n", ykp_config_num(cfg));
 		} else {
 			if (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2) {
 				fprintf(stderr, "Configuration data to be written to key configuration %d:\n\n", ykp_config_num(cfg));
@@ -227,25 +236,51 @@ int main(int argc, char **argv)
 
 			if (verbose)
 				printf("Attempting to write configuration to the yubikey...");
-			if(ykp_command(cfg) == SLOT_NDEF) {
-				YKNDEF ndef;
-				memset(&ndef, 0, sizeof(YKNDEF));
+			if(ykp_command(cfg) == SLOT_NDEF || ykp_command(cfg) == SLOT_NDEF2) {
+				YK_NDEF *ndef = ykp_alloc_ndef();
+				int confnum = 1;
 				if(ndef_type == 'U') {
-					ykp_construct_ndef_uri(&ndef, ndef_string);
+					ykp_construct_ndef_uri(ndef, ndef_string);
 				} else if(ndef_type == 'T') {
-					ykp_construct_ndef_text(&ndef, ndef_string, "en", false);
+					ykp_construct_ndef_text(ndef, ndef_string, "en", false);
 				}
 				if(use_access_code) {
-					memcpy(ndef.curAccCode, access_code, ACC_CODE_SIZE);
+					ykp_set_ndef_access_code(ndef, access_code);
 				}
-				if (!yk_write_ndef(yk, &ndef)) {
+				if(ykp_command(cfg) == SLOT_NDEF2) {
+					confnum = 2;
+				}
+				if (!yk_write_ndef2(yk, ndef, confnum)) {
 					if (verbose)
 						printf(" failure\n");
 					goto err;
 				}
+				ykp_free_ndef(ndef);
+			} else if(ykp_command(cfg) == SLOT_DEVICE_CONFIG) {
+				YK_DEVICE_CONFIG *device_config = ykp_alloc_device_config();
+				ykp_set_device_mode(device_config, usb_mode);
+				if(!yk_write_device_config(yk, device_config)) {
+					if(verbose)
+						printf(" failure\n");
+					goto err;
+				}
+				ykp_free_device_config(device_config);
+
+
+			} else if(ykp_command(cfg) == SLOT_SCAN_MAP) {
+				if(!yk_write_scan_map(yk, scan_codes)) {
+					if(verbose)
+						printf(" failure\n");
+					goto err;
+				}
 			} else {
+				YK_CONFIG *ycfg = NULL;
+				/* if we're deleting a slot we send the configuration as NULL */
+				if (!zap) {
+					ycfg = ykp_core_config(cfg);
+				}
 				if (!yk_write_command(yk,
-							ykp_core_config(cfg), ykp_command(cfg),
+							ycfg, ykp_command(cfg),
 							use_access_code ? access_code : NULL)) {
 					if (verbose)
 						printf(" failure\n");

@@ -114,12 +114,22 @@ int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	/* Options */
 	char *salt = NULL;
 	char ndef[128];
-	char ndef_type = NULL;
+	char ndef_type = 0;
+	unsigned char usb_mode = -1;
+	bool zap = false;
+
+	unsigned char scan_map[sizeof(SCAN_MAP)];
 
 	int rc;
 
 	ykp_errno = 0;
-	optind = 0; /* getopt reinit */
+
+/* getopt reinit (BSD systems use optreset and a different optind value) */
+#if defined(__GLIBC__) || defined(_WIN32)
+	optind = 0;
+#else
+	optind = optreset = 1;
+#endif
 
 	/* copy version number from st into cfg */
 	assert(ykp_configure_for(cfg, 1, st) == 1);
@@ -130,8 +140,8 @@ int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 			    &autocommit, salt,
 			    st, &verbose,
 			    access_code, &use_access_code,
-			    &aesviahash, &ndef_type, ndef,
-			    &exit_code);
+			    &aesviahash, &ndef_type, ndef, &usb_mode, &zap,
+			    scan_map, &exit_code);
 
 	return rc;
 }
@@ -292,6 +302,10 @@ int _test_non_config_args(void)
 	char *salt = NULL;
 	char ndef[128];
 	char ndef_type = NULL;
+	unsigned char usb_mode = -1;
+	bool zap = false;
+
+	unsigned char scan_map[sizeof(SCAN_MAP)];
 
 	char *argv[] = {
 		"unittest", "-1", "-sout", "-iin", "-c313233343536", "-y", "-v",
@@ -300,7 +314,13 @@ int _test_non_config_args(void)
 	int argc = 7;
 
 	ykp_errno = 0;
-	optind = 0; /* getopt reinit */
+
+/* getopt reinit (BSD systems use optreset and a different optind value) */
+#if defined(__GLIBC__) || defined(_WIN32)
+	optind = 0;
+#else
+	optind = optreset = 1;
+#endif
 
 	/* copy version number from st into cfg */
   ykp_configure_version(cfg, st);
@@ -312,8 +332,8 @@ int _test_non_config_args(void)
 			    &autocommit, salt,
 			    st, &verbose,
 			    access_code, &use_access_code,
-			    &aesviahash, &ndef_type, ndef,
-			    &exit_code);
+			    &aesviahash, &ndef_type, ndef, &usb_mode, &zap,
+			    scan_map, &exit_code);
 	assert(rc == 1);
 	i = strcmp(infname, "in"); assert(i == 0);
 	i = strcmp(outfname, "out"); assert(i == 0);
@@ -513,7 +533,7 @@ int _test_swap_with_update(void)
 	assert(rc == 0);
 }
 
-int _test_ndef_for_neo(void)
+int _test_ndef_for_neo_beta(void)
 {
 	YKP_CONFIG *cfg = ykp_alloc();
 	YK_STATUS *st = _test_init_st(2, 1, 7);
@@ -551,7 +571,7 @@ int _test_ndef_with_non_neo(void)
 	free(st);
 }
 
-int _test_slot_two_with_neo(void)
+int _test_slot_two_with_neo_beta(void)
 {
 	YKP_CONFIG *cfg = ykp_alloc();
 	YK_STATUS *st = _test_init_st(2, 1, 7);
@@ -563,6 +583,42 @@ int _test_slot_two_with_neo(void)
 
 	int rc = _test_config(cfg, st, argc, argv);
 	assert(rc == 0);
+	ykp_free_config(cfg);
+	free(st);
+}
+
+int _test_ndef2_with_neo_beta(void)
+{
+	YKP_CONFIG *cfg = ykp_alloc();
+	YK_STATUS *st = _test_init_st(2, 1, 7);
+
+	char *argv[] = {
+		"unittest", "-2", "-nhttps://my.yubico.com/neo/",
+	};
+	int argc = 2;
+
+	int rc = _test_config(cfg, st, argc, argv);
+	assert(rc == 0);
+	ykp_free_config(cfg);
+	free(st);
+}
+
+int _test_ndef2_with_neo(void)
+{
+	YKP_CONFIG *cfg = ykp_alloc();
+	YK_STATUS *st = _test_init_st(3, 0, 0);
+
+	char *argv[] = {
+		"unittest", "-2", "-nhttps://my.yubico.com/neo/",
+		NULL
+	};
+	int argc = 3;
+
+	int rc = _test_config(cfg, st, argc, argv);
+	assert(rc == 1);
+	struct config_st *ycfg = (struct config_st *) ykp_core_config(cfg);
+	assert(((struct ykp_config_t*)cfg)->command == SLOT_NDEF2);
+
 	ykp_free_config(cfg);
 	free(st);
 }
@@ -587,9 +643,11 @@ int main (int argc, char **argv)
 	_test_swap_with_slot();
 	_test_slot_with_update();
 	_test_swap_with_update();
-	_test_ndef_for_neo();
+	_test_ndef_for_neo_beta();
 	_test_ndef_with_non_neo();
-	_test_slot_two_with_neo();
+	_test_slot_two_with_neo_beta();
+	_test_ndef2_with_neo();
+	_test_ndef2_with_neo_beta();
 
 	return 0;
 }

@@ -33,7 +33,7 @@
 
 #include "rfc4634/sha.h"
 
-static int hmac_sha1(const char *key, size_t key_len,
+int yk_hmac_sha1(const char *key, size_t key_len,
 		     const char *text, size_t text_len,
 		     uint8_t *output, size_t output_size)
 {
@@ -41,13 +41,12 @@ static int hmac_sha1(const char *key, size_t key_len,
 		return 0;
 
 	if (hmac(SHA1,
-		 (unsigned char *)text, (int)text_len,
-		 (unsigned char *)key, (int)key_len,
+		 (const unsigned char *)text, (int)text_len,
+		 (const unsigned char *)key, (int)key_len,
 		 output))
 		return 0;
 	return 1;
 }
-YK_PRF_METHOD yk_hmac_sha1 = { SHA1HashSize, hmac_sha1 };
 
 int yk_pbkdf2(const char *passphrase,
 	      const unsigned char *salt, size_t salt_len,
@@ -63,10 +62,13 @@ int yk_pbkdf2(const char *passphrase,
 
 	unsigned int block_count;
 
+	memset(dk, 0, dklen);
+
 	for (block_count = 1; block_count <= l; block_count++) {
 		unsigned char block[256]; /* A big chunk, that's 2048 bits */
 		size_t block_len;
 		unsigned int iteration;
+		size_t i;
 
 		memcpy(block, salt, salt_len);
 		block[salt_len + 0] = (block_count & 0xff000000) >> 24;
@@ -81,11 +83,13 @@ int yk_pbkdf2(const char *passphrase,
 						block, sizeof(block)))
 				return 0;
 			block_len = prf_method->output_size;
+			for(i = 0; i < dklen; i++) {
+				dk[i] ^= block[i];
+			}
 		}
 
 		if (block_len > dklen)
 			block_len = dklen; /* This happens in the last block */
-		memcpy(dk, block, block_len);
 		dk += block_len;
 		dklen -= block_len;
 	}

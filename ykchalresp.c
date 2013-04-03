@@ -35,9 +35,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <ykpers.h>
 #include <yubikey.h>
 #include <ykdef.h>
+#include <ykcore.h>
+#include <ykstatus.h>
 
 const char *usage =
 	"Usage: ykchalresp [options] challenge\n"
@@ -58,11 +59,8 @@ const char *usage =
 	;
 const char *optstring = "12xvhHYN";
 
-static void report_yk_error()
+static void report_yk_error(void)
 {
-	if (ykp_errno)
-		fprintf(stderr, "Yubikey personalization error: %s\n",
-			ykp_strerror(ykp_errno));
 	if (yk_errno) {
 		if (yk_errno == YK_EUSBERR) {
 			fprintf(stderr, "USB error: %s\n",
@@ -74,7 +72,7 @@ static void report_yk_error()
 	}
 }
 
-int parse_args(int argc, char **argv,
+static int parse_args(int argc, char **argv,
 	       int *slot, bool *verbose,
 	       unsigned char **challenge, unsigned int *challenge_len,
 	       bool *hmac, bool *may_block,
@@ -122,9 +120,8 @@ int parse_args(int argc, char **argv,
 
 	if (hex_encoded) {
 		static unsigned char decoded[SHA1_MAX_BLOCK_SIZE];
-		int decoded_len;
 
-		int strl = strlen(argv[optind]);
+		size_t strl = strlen(argv[optind]);
 
 		if (strl > sizeof(decoded) * 2) {
 			fprintf(stderr, "Hex-encoded challenge too long (max %lu chars)\n",
@@ -155,12 +152,12 @@ int parse_args(int argc, char **argv,
 	return 1;
 }
 
-int check_firmware(YK_KEY *yk, bool verbose)
+static int check_firmware(YK_KEY *yk, bool verbose)
 {
 	YK_STATUS *st = ykds_alloc();
 
 	if (!yk_get_status(yk, st)) {
-		free(st);
+		ykds_free(st);
 		return 0;
 	}
 
@@ -176,7 +173,7 @@ int check_firmware(YK_KEY *yk, bool verbose)
 	    (ykds_version_major(st) == 2
 	     && ykds_version_minor(st) < 2)) {
 		fprintf(stderr, "Challenge-response not supported before YubiKey 2.2.\n");
-		free(st);
+		ykds_free(st);
 		return 0;
 	}
 
@@ -184,25 +181,19 @@ int check_firmware(YK_KEY *yk, bool verbose)
 	return 1;
 }
 
-int challenge_response(YK_KEY *yk, int slot,
+static int challenge_response(YK_KEY *yk, int slot,
 		       unsigned char *challenge, unsigned int len,
 		       bool hmac, bool may_block, bool verbose)
 {
 	unsigned char response[64];
 	unsigned char output_buf[(SHA1_MAX_BLOCK_SIZE * 2) + 1];
 	int yk_cmd;
-	unsigned int flags = 0;
-	unsigned int response_len = 0;
 	unsigned int expect_bytes = 0;
-
 	memset(response, 0, sizeof(response));
-
-	if (may_block)
-		flags |= YK_FLAG_MAYBLOCK;
+	memset(output_buf, 0, sizeof(output_buf));
 
 	if (verbose) {
 		fprintf(stderr, "Sending %i bytes %s challenge to slot %i\n", len, (hmac == true)?"HMAC":"Yubico", slot);
-		//_yk_hexdump(challenge, len);
 	}
 
 	switch(slot) {
@@ -212,34 +203,22 @@ int challenge_response(YK_KEY *yk, int slot,
 	case 2:
 		yk_cmd = (hmac == true) ? SLOT_CHAL_HMAC2 : SLOT_CHAL_OTP2;
 		break;
+	default:
+		return 0;
 	}
 
-	if (!yk_write_to_key(yk, yk_cmd, challenge, len))
+	if(! yk_challenge_response(yk, yk_cmd, may_block, len,
+				challenge, sizeof(response), response)) {
 		return 0;
-
-	if (verbose) {
-		fprintf(stderr, "Reading response...\n");
 	}
 
 	/* HMAC responses are 160 bits, Yubico 128 */
 	expect_bytes = (hmac == true) ? 20 : 16;
 
-	if (! yk_read_response_from_key(yk, slot, flags,
-					&response, sizeof(response),
-					expect_bytes,
-					&response_len))
-		return 0;
-
-	if (hmac && response_len > 20)
-		response_len = 20;
-	if (! hmac && response_len > 16)
-		response_len = 16;
-
-	memset(output_buf, 0, sizeof(output_buf));
 	if (hmac) {
-		yubikey_hex_encode((char *)output_buf, (char *)response, response_len);
+		yubikey_hex_encode((char *)output_buf, (char *)response, expect_bytes);
 	} else {
-		yubikey_modhex_encode((char *)output_buf, (char *)response, response_len);
+		yubikey_modhex_encode((char *)output_buf, (char *)response, expect_bytes);
 	}
 	printf("%s\n", output_buf);
 
@@ -254,14 +233,12 @@ int main(int argc, char **argv)
 
 	/* Options */
 	bool verbose = false;
-	bool hex_encoded = false;
 	bool hmac = true;
 	bool may_block = true;
 	unsigned char *challenge;
 	unsigned int challenge_len;
 	int slot = 1;
 
-	ykp_errno = 0;
 	yk_errno = 0;
 
 	if (! parse_args(argc, argv,
@@ -269,7 +246,7 @@ int main(int argc, char **argv)
 			 &challenge, &challenge_len,
 			 &hmac, &may_block,
 			 &exit_code))
-		goto err;
+		exit(exit_code);
 
 	if (!yk_init()) {
 		exit_code = 1;

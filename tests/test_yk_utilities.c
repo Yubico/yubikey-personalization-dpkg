@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2012 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,52 +28,62 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#error "To be implemented!"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <assert.h>
 
-#include "ykcore.h"
-#include "ykdef.h"
-#include "ykcore_backend.h"
+#include <ykstatus.h>
+#include <ykcore.h>
+#include <ykdef.h>
 
-int _ykusb_start(void)
+struct {
+	int major;
+	int minor;
+	int build;
+} supported[] = {
+	{0,9,9},
+	{1,2,9},
+	{1,3,1},
+	{2,0,2},
+	{2,1,1},
+	{2,2,3},
+	{2,3,0},
+	{3,0,1},
+};
+
+static YK_STATUS * _test_init_st(int major, int minor, int build)
 {
-	yk_errno = YK_ENOTYETIMPL;
+	YK_STATUS *st = ykds_alloc();
+	struct status_st *t;
+
+	t = (struct status_st *) st;
+
+	/* connected key details */
+	t->versionMajor = major;
+	t->versionMinor = minor;
+	t->versionBuild = build;
+
+	return st;
+}
+
+static void _test_yk_firmware(void)
+{
+	size_t i;
+	for(i = 0; i < sizeof(supported) / (sizeof(int) * 3); i++) {
+		int rc;
+		YK_STATUS *st = _test_init_st(supported[i].major, supported[i].minor, supported[i].build);
+		printf("testing: %d.%d.%d\n", supported[i].major, supported[i].minor, supported[i].build);
+		rc = yk_check_firmware_version2(st);
+		assert(rc == 1);
+		ykds_free(st);
+	}
+}
+
+int main(void)
+{
+	_test_yk_firmware();
+
 	return 0;
 }
 
-int _ykusb_stop(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-void * _ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return NULL;
-}
-
-int _ykusb_close_device(void *yk)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_read(void *dev, int report_type, int report_number,
-		char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-int _ykusb_write(void *dev, int report_type, int report_number,
-		 char *buffer, int buffer_size)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
-
-const char *_ykusb_strerror(void)
-{
-	yk_errno = YK_ENOTYETIMPL;
-	return 0;
-}
