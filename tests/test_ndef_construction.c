@@ -32,73 +32,107 @@
 #include <string.h>
 #include <assert.h>
 
+#include "ykcore/ykcore_lcl.h"
 #include <ykpers.h>
 #include <ykdef.h>
 
 void _test_https_uri()
 {
-	YKNDEF ndef;
-	memset(&ndef, 0, sizeof(YKNDEF));
+	YK_NDEF *ndef = ykp_alloc_ndef();
 	char uri[] = "https://example.com/foo";
-	int rc = ykp_construct_ndef_uri(&ndef, uri);
-	assert(rc == 0);
-	assert(ndef.type == 'U');
-	assert(ndef.data[0] == 0x04);
-	assert(strncmp(ndef.data + 1, "example.com/foo", 15) == 0);
-	assert(ndef.len == 16);
+	int rc = ykp_construct_ndef_uri(ndef, uri);
+	char text[256];
+	assert(rc == 1);
+	assert(ndef->type == 'U');
+	assert(ndef->data[0] == 0x04);
+	assert(strncmp(ndef->data + 1, "example.com/foo", 15) == 0);
+	assert(ndef->len == 16);
+	rc = ykp_ndef_as_text(ndef, text, 256);
+	assert(rc == 1);
+	assert(strncmp(uri, text, strlen(uri)) == 0);
+	ykp_free_ndef(ndef);
 }
 
 void _test_to_long_uri()
 {
-	YKNDEF ndef;
-	memset(&ndef, 0, sizeof(YKNDEF));
+	YK_NDEF *ndef = ykp_alloc_ndef();
 	char uri[] = "https://example.example.example.example.com/foo/kaka/bar/blahonga";
-	int rc = ykp_construct_ndef_uri(&ndef, uri);
-	assert(rc == 1);
-	assert(ndef.type == 0);
-	assert(ndef.len == 0);
+	int rc = ykp_construct_ndef_uri(ndef, uri);
+	assert(rc == 0);
+	assert(ndef->type == 0);
+	assert(ndef->len == 0);
+	ykp_free_ndef(ndef);
 }
 
 void _test_exact_uri()
 {
-	YKNDEF ndef;
-	memset(&ndef, 0, sizeof(YKNDEF));
+	YK_NDEF *ndef = ykp_alloc_ndef();
 	char uri[] = "https://www.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-	int rc = ykp_construct_ndef_uri(&ndef, uri);
-	assert(rc == 0);
-	assert(ndef.type == 'U');
-	assert(ndef.data[0] == 0x02);
-	assert(strncmp(ndef.data + 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", NDEF_DATA_SIZE -1) == 0);
-	assert(ndef.len == NDEF_DATA_SIZE);
+	int rc = ykp_construct_ndef_uri(ndef, uri);
+	char text[256];
+	assert(rc == 1);
+	assert(ndef->type == 'U');
+	assert(ndef->data[0] == 0x02);
+	assert(strncmp(ndef->data + 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", NDEF_DATA_SIZE -1) == 0);
+	assert(ndef->len == NDEF_DATA_SIZE);
+	rc = ykp_ndef_as_text(ndef, text, 256);
+	assert(rc == 1);
+	assert(strncmp(uri, text, strlen(uri)) == 0);
+	ykp_free_ndef(ndef);
 }
 
 void _test_exact_text()
 {
-	YKNDEF ndef;
-	memset(&ndef, 0, sizeof(YKNDEF));
+	YK_NDEF *ndef = ykp_alloc_ndef();
 	char text[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-	int rc = ykp_construct_ndef_text(&ndef, text, "en", false);
-	assert(rc == 0);
-	assert(ndef.type == 'T');
-	assert(ndef.data[0] == 2);
-	assert(strncmp(ndef.data + 1, "en", 2) == 0);
-	assert(strncmp(ndef.data + 3, text, NDEF_DATA_SIZE - 3) == 0);
-	assert(ndef.len == NDEF_DATA_SIZE);
+	int rc = ykp_construct_ndef_text(ndef, text, "en", false);
+	char text2[256];
+	assert(rc == 1);
+	assert(ndef->type == 'T');
+	assert(ndef->data[0] == 2);
+	assert(strncmp(ndef->data + 1, "en", 2) == 0);
+	assert(strncmp(ndef->data + 3, text, NDEF_DATA_SIZE - 3) == 0);
+	assert(ndef->len == NDEF_DATA_SIZE);
+	rc = ykp_ndef_as_text(ndef, text2, 256);
+	assert(rc == 1);
+	assert(strncmp(text, text2, strlen(text)) == 0);
+	ykp_free_ndef(ndef);
 }
 
 void _test_other_lang_text()
 {
-	YKNDEF ndef;
-	memset(&ndef, 0, sizeof(YKNDEF));
+	YK_NDEF *ndef = ykp_alloc_ndef();
 	char text[] = "aaaaaaaaaaaaaaa";
 	size_t text_len = strlen(text);
-	int rc = ykp_construct_ndef_text(&ndef, text, "sv-SE", true);
-	assert(rc == 0);
-	assert(ndef.type == 'T');
-	assert(ndef.data[0] == (0x80 & 5));
-	assert(strncmp(ndef.data + 1, "sv-SE", 5) == 0);
-	assert(strncmp(ndef.data + 6, text, text_len) == 0);
-	assert(ndef.len == text_len + 6);
+	int rc = ykp_construct_ndef_text(ndef, text, "sv-SE", true);
+	char text2[256];
+	assert(rc == 1);
+	assert(ndef->type == 'T');
+	assert(ndef->data[0] == (0x80 & 5));
+	assert(strncmp(ndef->data + 1, "sv-SE", 5) == 0);
+	assert(strncmp(ndef->data + 6, text, text_len) == 0);
+	assert(ndef->len == text_len + 6);
+	rc = ykp_ndef_as_text(ndef, text2, 256);
+	assert(rc == 1);
+	assert(strncmp(text, text2, strlen(text)));
+	ykp_free_ndef(ndef);
+}
+
+void _test_uri_without_identifier()
+{
+	YK_NDEF *ndef = ykp_alloc_ndef();
+	char uri[] = "example.com/foo";
+	int rc = ykp_construct_ndef_uri(ndef, uri);
+	char text[256];
+	assert(rc == 1);
+	assert(ndef->type == 'U');
+	assert(ndef->data[0] == 0);
+	assert(strncmp(ndef->data + 1, "example.com/foo", 15) == 0);
+	assert(ndef->len == 16);
+	rc = ykp_ndef_as_text(ndef, text, 256);
+	assert(rc == 1);
+	assert(strncmp(uri, text, strlen(uri)) == 0);
+	ykp_free_ndef(ndef);
 }
 
 int main (void)
@@ -108,6 +142,7 @@ int main (void)
 	_test_exact_uri();
 	_test_exact_text();
 	_test_other_lang_text();
+	_test_uri_without_identifier();
 
 	return 0;
 }

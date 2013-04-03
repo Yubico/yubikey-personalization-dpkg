@@ -42,6 +42,7 @@
 
 static int ykl_errno;
 static int libusb_inited = 0;
+static libusb_context *usb_ctx = NULL;
 
 /*************************************************************************
  **  function _ykusb_write						**
@@ -135,7 +136,11 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 
 int _ykusb_start(void)
 {
-	libusb_init(NULL);
+	ykl_errno = libusb_init(&usb_ctx);
+	if(ykl_errno) {
+		yk_errno = YK_EUSBERR;
+		return 0;
+	}
 	libusb_inited = 1;
 	return 1;
 }
@@ -143,37 +148,57 @@ int _ykusb_start(void)
 extern int _ykusb_stop(void)
 {
 	if (libusb_inited == 1) {
-		libusb_exit(NULL);
+		libusb_exit(usb_ctx);
+		usb_ctx = NULL;
+		libusb_inited = 0;
 		return 1;
 	}
 	yk_errno = YK_EUSBERR;
 	return 0;
 }
 
-void *_ykusb_open_device(int vendor_id, int product_id)
+void *_ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len)
 {
-	libusb_device *dev;
+	libusb_device *dev = NULL;
 	libusb_device_handle *h = NULL;
 	struct libusb_device_descriptor desc;
 	libusb_device **list;
-	size_t cnt = libusb_get_device_list(NULL, &list);
-	size_t i = 0;
+	ssize_t cnt = libusb_get_device_list(usb_ctx, &list);
+	ssize_t i = 0;
 	int rc = YK_ENOKEY;
 
 	for (i = 0; i < cnt; i++) {
-		dev = list[i];
-		ykl_errno = libusb_get_device_descriptor(dev, &desc);
+		ykl_errno = libusb_get_device_descriptor(list[i], &desc);
 		if (ykl_errno != 0)
 			goto done;
 
-		if (desc.idVendor == YUBICO_VID && desc.idProduct == YUBIKEY_PID) {
-			rc = YK_EUSBERR;
-			ykl_errno = libusb_open(dev, &h);
-			if (ykl_errno != 0)
-				goto done;
-			ykl_errno = libusb_detach_kernel_driver(h, 0);
-			goto done;
+		if (desc.idVendor == vendor_id) {
+			size_t j;
+			for(j = 0; j < pids_len; j++) {
+				if (desc.idProduct == product_ids[j]) {
+					if(dev == NULL) {
+						dev = list[i];
+						break;
+					} else {
+						rc = YK_EMORETHANONE;
+						goto done;
+					}
+				}
+			}
 		}
+	}
+
+	if (dev) {
+		rc = YK_EUSBERR;
+		ykl_errno = libusb_open(dev, &h);
+		if (ykl_errno != 0)
+			goto done;
+		ykl_errno = libusb_detach_kernel_driver(h, 0);
+		if (ykl_errno != 0)
+			goto done;
+		/* This is needed for yubikey-personalization to work inside virtualbox virtualization. */
+		ykl_errno = libusb_set_configuration(h, 1);
+		goto done;
 	}
  done:
 	libusb_free_device_list(list, 1);
@@ -189,9 +214,9 @@ int _ykusb_close_device(void *yk)
 	return 1;
 }
 
-const char *_ykusb_strerror()
+const char *_ykusb_strerror(void)
 {
-	static char *buf;
+	static const char *buf;
 	switch (ykl_errno) {
 	case LIBUSB_SUCCESS:
 		buf = "Success (no error)";

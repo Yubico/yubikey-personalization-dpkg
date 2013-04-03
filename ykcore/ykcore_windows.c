@@ -32,6 +32,7 @@
 #include "ykdef.h"
 #include "ykcore_backend.h"
 
+#define INITGUID
 #include <stdio.h>
 #include <windows.h>
 #include <setupapi.h>
@@ -48,7 +49,7 @@ int _ykusb_stop(void)
 	return 1;
 }
 
-void * _ykusb_open_device(int vendor_id, int product_id)
+void * _ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len)
 {
 	HDEVINFO hi;
 	SP_DEVICE_INTERFACE_DATA di;
@@ -91,20 +92,33 @@ void * _ykusb_open_device(int vendor_id, int product_id)
 				HIDD_ATTRIBUTES devInfo;
 
 				if (HidD_GetAttributes(m_handle, &devInfo)) {
-					if (devInfo.VendorID == vendor_id && devInfo.ProductID == product_id) {
-						ret_handle = m_handle;
-						free (pi);
-						goto done;
+					if (devInfo.VendorID == vendor_id) {
+						size_t j;
+						for (j = 0; j < pids_len; j++) {
+							if (devInfo.ProductID == product_ids[j]) {
+								if(ret_handle == NULL) {
+									ret_handle = m_handle;
+									break;
+								} else {
+									yk_errno = YK_EMORETHANONE;
+									ret_handle = NULL;
+									CloseHandle (m_handle);
+									goto done;
+								}
+							}
+						}
 					}
 				}
 			}
-			CloseHandle (m_handle);
+			if(ret_handle == NULL) {
+				CloseHandle (m_handle);
+			}
 		}
 
 		free (pi);
-
-		if (!rc)
-			break;
+	}
+	if(ret_handle != NULL) {
+		goto done;
 	}
 
 	yk_errno = YK_ENOKEY;
@@ -173,5 +187,8 @@ int _ykusb_write(void *dev, int report_type, int report_number,
 
 const char *_ykusb_strerror(void)
 {
-	return "USB error\n";
+	static char buf[1024];
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0,
+			buf, sizeof(buf), NULL);
+	return buf;
 }

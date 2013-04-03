@@ -44,17 +44,12 @@
 /*
  * Yubikey low-level interface section 2.4 (Report arbitration polling) specifies
  * a 600 ms timeout for a Yubikey to process something written to it.
+ * Where can that document be found?
+ * It has been discovered that for swap 600 is not enough, swapping can worst
+ * case take 920 ms, which we then add 25% to for safety margin, arriving at
+ * 1150 ms.
  */
-#define WAIT_FOR_WRITE_FLAG	600
-
-int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
-			   unsigned int max_time_ms,
-			   bool logic_and, unsigned char mask,
-			   unsigned char *last_data);
-
-int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
-			      void *buf, unsigned int bufsize, unsigned int expect_bytes,
-			      unsigned int *bytes_read);
+#define WAIT_FOR_WRITE_FLAG	1150
 
 int yk_init(void)
 {
@@ -68,7 +63,9 @@ int yk_release(void)
 
 YK_KEY *yk_open_first_key(void)
 {
-	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, YUBIKEY_PID);
+	int pids[] = {YUBIKEY_PID, NEO_OTP_PID, NEO_OTP_CCID_PID};
+
+	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids));
 	int rc = yk_errno;
 
 	if (yk) {
@@ -95,19 +92,30 @@ int yk_check_firmware_version(YK_KEY *k)
 
 	if (!yk_get_status(k, &st))
 		return 0;
-	if (!((st.versionMajor == 0 &&
-	       (st.versionMinor == 9 ||
-		st.versionBuild == 9)) ||
-	      (st.versionMajor == 1 &&
-	       (st.versionMinor == 0 ||
-		st.versionMinor == 1 ||
-		st.versionMinor == 2 ||
-		st.versionMinor == 3)) ||
-	      (st.versionMajor == 2 &&
-	       (st.versionMinor == 0 ||
-		st.versionMinor == 1 ||
-		st.versionMinor == 2 ||
-		st.versionMinor == 3)))) {
+
+	return yk_check_firmware_version2(&st);
+}
+
+
+int yk_check_firmware_version2(YK_STATUS *st)
+{
+	if (!((st->versionMajor == 0 &&
+	       (st->versionMinor == 9 ||
+		st->versionBuild == 9)) ||
+	      (st->versionMajor == 1 &&
+	       (st->versionMinor == 0 ||
+		st->versionMinor == 1 ||
+		st->versionMinor == 2 ||
+		st->versionMinor == 3)) ||
+	      (st->versionMajor == 2 &&
+	       (st->versionMinor == 0 ||
+		st->versionMinor == 1 ||
+		st->versionMinor == 2 ||
+		st->versionMinor == 3 ||
+		st->versionMinor == 4)) ||
+	      (st->versionMajor == 3 &&
+	       (st->versionMinor == 0 ||
+		st->versionMinor == 1)))) {
 		yk_errno = YK_EFIRMWARE;
 		return 0;
 	}
@@ -145,7 +153,6 @@ int yk_get_status(YK_KEY *k, YK_STATUS *status)
 int yk_get_serial(YK_KEY *yk, uint8_t slot, unsigned int flags, unsigned int *serial)
 {
 	unsigned char buf[FEATURE_RPT_SIZE * 2];
-	int yk_cmd;
 	unsigned int response_len = 0;
 	unsigned int expect_bytes = 0;
 
@@ -175,10 +182,8 @@ int yk_get_serial(YK_KEY *yk, uint8_t slot, unsigned int flags, unsigned int *se
 	return 1;
 }
 
-int yk_write_command(YK_KEY *yk, YK_CONFIG *cfg, uint8_t command,
-		    unsigned char *acc_code)
+static int _yk_write(YK_KEY *yk, uint8_t yk_cmd, unsigned char *buf, size_t len)
 {
-	unsigned char buf[sizeof(YK_CONFIG) + ACC_CODE_SIZE];
 	YK_STATUS stat;
 	int seq;
 
@@ -188,6 +193,38 @@ int yk_write_command(YK_KEY *yk, YK_CONFIG *cfg, uint8_t command,
 		return 0;
 
 	seq = stat.pgmSeq;
+
+	/* Write to Yubikey */
+	if (!yk_write_to_key(yk, yk_cmd, buf, len))
+		return 0;
+
+	/* When the Yubikey clears the SLOT_WRITE_FLAG, it has processed the last write.
+	 * This wait can't be done in yk_write_to_key since some users of that function
+	 * want to get the bytes in the status message, but when writing configuration
+	 * we don't expect any data back.
+	 */
+	yk_wait_for_key_status(yk, yk_cmd, 0, WAIT_FOR_WRITE_FLAG, false, SLOT_WRITE_FLAG, NULL);
+
+	/* Verify update */
+
+	if (!yk_get_status(yk, &stat /*, 0*/))
+		return 0;
+
+	yk_errno = YK_EWRITEERR;
+
+	/* when both configurations from a YubiKey is erased it will return
+	 * pgmSeq 0, if one is still configured after an erase pgmSeq is
+	 * counted up as usual. */
+	if((stat.touchLevel & (CONFIG1_VALID | CONFIG2_VALID)) == 0 && stat.pgmSeq == 0) {
+		return 1;
+	}
+	return stat.pgmSeq != seq;
+}
+
+int yk_write_command(YK_KEY *yk, YK_CONFIG *cfg, uint8_t command,
+		    unsigned char *acc_code)
+{
+	unsigned char buf[sizeof(YK_CONFIG) + ACC_CODE_SIZE];
 
 	/* Update checksum and insert config block in buffer if present */
 
@@ -205,28 +242,8 @@ int yk_write_command(YK_KEY *yk, YK_CONFIG *cfg, uint8_t command,
 	if (acc_code)
 		memcpy(buf + sizeof(YK_CONFIG), acc_code, ACC_CODE_SIZE);
 
-	/* Write to Yubikey */
-	if (!yk_write_to_key(yk, command, buf, sizeof(buf)))
-		return 0;
+	return _yk_write(yk, command, buf, sizeof(buf));
 
-	/* When the Yubikey clears the SLOT_WRITE_FLAG, it has processed the last write.
-	 * This wait can't be done in yk_write_to_key since some users of that function
-	 * want to get the bytes in the status message, but when writing configuration
-	 * we don't expect any data back.
-	 */
-	yk_wait_for_key_status(yk, command, 0, WAIT_FOR_WRITE_FLAG, false, SLOT_WRITE_FLAG, NULL);
-
-	/* Verify update */
-
-	if (!yk_get_status(yk, &stat /*, 0*/))
-		return 0;
-
-	yk_errno = YK_EWRITEERR;
-	if (cfg) {
-		return stat.pgmSeq != seq;
-	}
-
-	return stat.pgmSeq == 0;
 }
 
 int yk_write_config(YK_KEY *yk, YK_CONFIG *cfg, int confnum,
@@ -241,53 +258,103 @@ int yk_write_config(YK_KEY *yk, YK_CONFIG *cfg, int confnum,
 		command = SLOT_CONFIG2;
 		break;
 	default:
+		yk_errno = YK_EINVALIDCMD;
 		return 0;
 	}
 	if(!yk_write_command(yk, cfg, command, acc_code)) {
 		return 0;
 	}
+	return 1;
 }
 
-int yk_write_ndef(YK_KEY *yk, YKNDEF *ndef)
+int yk_write_ndef(YK_KEY *yk, YK_NDEF *ndef)
 {
-	unsigned char buf[sizeof(YKNDEF)];
-	YK_STATUS stat;
-	int seq;
+	/* just wrap yk_write_ndef2() with confnum 1 */
+	return yk_write_ndef2(yk, ndef, 1);
+}
 
-	/* Get current sequence # from status block */
+int yk_write_ndef2(YK_KEY *yk, YK_NDEF *ndef, int confnum)
+{
+	unsigned char buf[sizeof(YK_NDEF)];
+	uint8_t command;
 
-	if (!yk_get_status(yk, &stat))
-		return 0;
-
-	seq = stat.pgmSeq;
+	switch(confnum) {
+		case 1:
+			command = SLOT_NDEF;
+			break;
+		case 2:
+			command = SLOT_NDEF2;
+			break;
+		default:
+			yk_errno = YK_EINVALIDCMD;
+			return 0;
+	}
 
 	/* Insert config block in buffer */
 
 	memset(buf, 0, sizeof(buf));
-	memcpy(buf, ndef, sizeof(YKNDEF));
+	memcpy(buf, ndef, sizeof(YK_NDEF));
 
-	/* Write to Yubikey */
-	if (!yk_write_to_key(yk, SLOT_NDEF, buf, sizeof(buf)))
-		return 0;
-
-	/* When the Yubikey clears the SLOT_WRITE_FLAG, it has processed the last write.
-	 * This wait can't be done in yk_write_to_key since some users of that function
-	 * want to get the bytes in the status message, but when writing configuration
-	 * we don't expect any data back.
-	 */
-	yk_wait_for_key_status(yk, SLOT_NDEF, 0, WAIT_FOR_WRITE_FLAG, false, SLOT_WRITE_FLAG, NULL);
-
-	/* Verify update */
-
-	if (!yk_get_status(yk, &stat /*, 0*/))
-		return 0;
-
-	yk_errno = YK_EWRITEERR;
-	return stat.pgmSeq != seq;
+	return _yk_write(yk, command, buf, sizeof(YK_NDEF));
 }
 
+int yk_write_device_config(YK_KEY *yk, YK_DEVICE_CONFIG *device_config)
+{
+	unsigned char buf[sizeof(YK_DEVICE_CONFIG)];
 
-int * const _yk_errno_location(void)
+	memset(buf, 0, sizeof(buf));
+	memcpy(buf, device_config, sizeof(YK_DEVICE_CONFIG));
+
+	return _yk_write(yk, SLOT_DEVICE_CONFIG, buf, sizeof(YK_DEVICE_CONFIG));
+}
+
+int yk_write_scan_map(YK_KEY *yk, unsigned char *scan_map)
+{
+	return _yk_write(yk, SLOT_SCAN_MAP, scan_map, strlen(SCAN_MAP));
+}
+
+/*
+ * This function is for doing HMAC-SHA1 or Yubico challenge-response with a key.
+ */
+int yk_challenge_response(YK_KEY *yk, uint8_t yk_cmd, int may_block,
+		unsigned int challenge_len, const unsigned char *challenge,
+		unsigned int response_len, unsigned char *response)
+{
+	unsigned int flags = 0;
+	unsigned int bytes_read = 0;
+	unsigned int expect_bytes = 0;
+
+	switch(yk_cmd) {
+	case SLOT_CHAL_HMAC1:
+	case SLOT_CHAL_HMAC2:
+		expect_bytes = 20;
+		break;
+	case SLOT_CHAL_OTP1:
+	case SLOT_CHAL_OTP2:
+		expect_bytes = 16;
+		break;
+	default:
+		yk_errno = YK_EINVALIDCMD;
+		return 0;
+	}
+
+	if (may_block)
+		flags |= YK_FLAG_MAYBLOCK;
+
+	if (! yk_write_to_key(yk, yk_cmd, challenge, challenge_len)) {
+		return 0;
+	}
+
+	if (! yk_read_response_from_key(yk, yk_cmd, flags,
+				response, response_len,
+				expect_bytes,
+				&bytes_read)) {
+		return 0;
+	}
+	return 1;
+}
+
+int * _yk_errno_location(void)
 {
 	static int tsd_init = 0;
 	static int nothread_errno = 0;
@@ -296,15 +363,18 @@ int * const _yk_errno_location(void)
 
 	if (tsd_init == 0) {
 		if ((rc = YK_TSD_INIT(errno_key, free)) == 0) {
-			void *p = calloc(1, sizeof(int));
-			if (!p) {
-				tsd_init = -1;
-			} else {
-				YK_TSD_SET(errno_key, p);
-				tsd_init = 1;
-			}
+			tsd_init = 1;
 		} else {
 			tsd_init = -1;
+		}
+	}
+
+	if(YK_TSD_GET(int *, errno_key) == NULL) {
+		void *p = calloc(1, sizeof(int));
+		if (!p) {
+			tsd_init = -1;
+		} else {
+			YK_TSD_SET(errno_key, p);
 		}
 	}
 	if (tsd_init == 1) {
@@ -325,7 +395,9 @@ static const char *errtext[] = {
 	"no status structure given",
 	"not yet implemented",
 	"checksum mismatch",
-	"operation would block"
+	"operation would block",
+	"invalid command for operation",
+	"expected only one YubiKey but several present",
 };
 const char *yk_strerror(int errnum)
 {
@@ -333,7 +405,7 @@ const char *yk_strerror(int errnum)
 		return errtext[errnum];
 	return NULL;
 }
-const char *yk_usb_strerror()
+const char *yk_usb_strerror(void)
 {
 	return _ykusb_strerror();
 }
@@ -381,10 +453,9 @@ int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
 			   unsigned char *last_data)
 {
 	unsigned char data[FEATURE_RPT_SIZE];
-	unsigned int bytes_read;
 
-	int sleepval = 10;
-	int slept_time = 0;
+	unsigned int sleepval = 10;
+	unsigned int slept_time = 0;
 	int blocking = 0;
 
 	/* Non-zero slot breaks on Windows (libusb-1.0.8-win32), while working fine
@@ -486,7 +557,7 @@ int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
 	/* The first part of the response was read by yk_wait_for_key_status(). We need
 	 * to copy it to buf.
 	 */
-	memcpy(buf + *bytes_read, data, sizeof(data) - 1);
+	memcpy((char*)buf + *bytes_read, data, sizeof(data) - 1);
 	*bytes_read += sizeof(data) - 1;
 
 	while (*bytes_read + FEATURE_RPT_SIZE <= bufsize) {
@@ -517,7 +588,7 @@ int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
 				return 1;
 			}
 
-			memcpy(buf + *bytes_read, data, sizeof(data) - 1);
+			memcpy((char*)buf + *bytes_read, data, sizeof(data) - 1);
 			*bytes_read += sizeof(data) - 1;
 		} else {
 			/* Reset read mode of Yubikey before returning. */
@@ -538,8 +609,6 @@ int yk_read_response_from_key(YK_KEY *yk, uint8_t slot, unsigned int flags,
  * Send something to the YubiKey. The command, as well as the slot, is
  * given in the 'slot' parameter (e.g. SLOT_CHAL_HMAC2 to send a HMAC-SHA1
  * challenge to slot 2).
- *
- * The slot parameter is here for future purposes only.
  */
 int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount)
 {

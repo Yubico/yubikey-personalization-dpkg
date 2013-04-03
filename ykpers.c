@@ -60,7 +60,7 @@ static const YK_CONFIG default_config1 = {
 	0,			/* extFlags */
 	TKTFLAG_APPEND_CR,	/* tktFlags */
 	0,			/* cfgFlags */
-	0,			/* ctrOffs */
+	{0},			/* ctrOffs */
 	0			/* crc */
 };
 
@@ -74,12 +74,12 @@ static const YK_CONFIG default_config2 = {
 	TKTFLAG_APPEND_CR,	/* tktFlags */
 	/* cfgFlags */
 	CFGFLAG_STATIC_TICKET | CFGFLAG_STRONG_PW1 | CFGFLAG_STRONG_PW2 | CFGFLAG_MAN_UPDATE,
-	0,			/* ctrOffs */
+	{0},			/* ctrOffs */
 	0			/* crc */
 };
 
 /* From nfcforum-ts-rtd-uri-1.0.pdf */
-static char *ndef_identifiers[] = {
+static const char *ndef_identifiers[] = {
 	"http://www.",
 	"https://www.",
 	"http://",
@@ -184,10 +184,18 @@ int ykp_configure_command(YKP_CONFIG *cfg, uint8_t command)
 			return 0;
 		}
 		break;
+	case SLOT_DEVICE_CONFIG:
+	case SLOT_SCAN_MAP:
+	case SLOT_NDEF2:
+		if(!(cfg->yk_major_version >= 3)) {
+			ykp_errno = YKP_EYUBIKEYVER;
+			return 0;
+		}
+		break;
 	case SLOT_NDEF:
 		/* NDEF is available for neo, thus within 2.1 from build 4 */
-		if (!(cfg->yk_major_version == 2 && cfg->yk_minor_version == 1 &&
-			  cfg->yk_build_version >= 4)) {
+		if (!((cfg->yk_major_version == 2 && cfg->yk_minor_version == 1 &&
+			  cfg->yk_build_version >= 4) || cfg->yk_major_version == 3)) {
 			ykp_errno = YKP_EYUBIKEYVER;
 			return 0;
 		}
@@ -221,10 +229,8 @@ int ykp_configure_for(YKP_CONFIG *cfg, int confnum, YK_STATUS *st)
 /* Return number of bytes of key data for this configuration.
  * 20 bytes is 160 bits, 16 bytes is 128.
  */
-int _get_supported_key_length(const YKP_CONFIG *cfg)
+static int _get_supported_key_length(const YKP_CONFIG *cfg)
 {
-	bool key_bits_in_uid = false;
-
 	/* OATH-HOTP and HMAC-SHA1 challenge response support 20 byte (160 bits)
 	 * keys, holding the last four bytes in the uid field.
 	 */
@@ -265,7 +271,7 @@ int ykp_AES_key_from_hex(YKP_CONFIG *cfg, const char *hexkey) {
 */
 int ykp_HMAC_key_from_hex(YKP_CONFIG *cfg, const char *hexkey) {
 	char aesbin[256];
-	int i;
+	size_t i;
 
 	/* Make sure that the hexkey is exactly 40 characters */
 	if (strlen(hexkey) != 40) {
@@ -295,18 +301,19 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 				const char *salt)
 {
 	if (cfg) {
-		char *random_places[] = {
+		const char *random_places[] = {
 			"/dev/srandom",
 			"/dev/urandom",
 			"/dev/random",
 			0
 		};
-		char **random_place;
+		const char **random_place;
 		uint8_t _salt[8];
 		size_t _salt_len = 0;
 		unsigned char buf[sizeof(cfg->ykcore_config.key) + 4];
 		int rc;
 		int key_bytes = _get_supported_key_length(cfg);
+		YK_PRF_METHOD prf_method = {20, yk_hmac_sha1};
 
 		assert (key_bytes <= sizeof(buf));
 
@@ -341,12 +348,10 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 		if (_salt_len == 0) {
 			/* There was no randomness files, so create a cheap
 			   salt from time */
-#                       include <ykpbkdf2.h>
-
 			time_t t = time(NULL);
 			uint8_t output[256]; /* 2048 bits is a lot! */
 
-			yk_hmac_sha1.prf_fn(passphrase, strlen(passphrase),
+			prf_method.prf_fn(passphrase, strlen(passphrase),
 					    (char *)&t, sizeof(t),
 					    output, sizeof(output));
 			memcpy(_salt, output, sizeof(_salt));
@@ -357,7 +362,7 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 			       _salt, _salt_len,
 			       1024,
 			       buf, key_bytes,
-			       &yk_hmac_sha1);
+			       &prf_method);
 
 		if (rc) {
 			memcpy(cfg->ykcore_config.key, buf, sizeof(cfg->ykcore_config.key));
@@ -373,52 +378,169 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 	return 0;
 }
 
-/* Fill in the data and len parts of the YKNDEF struct based on supplied uri. */
-int ykp_construct_ndef_uri(YKNDEF *ndef, const char *uri)
+YK_NDEF *ykp_alloc_ndef(void)
+{
+	YK_NDEF *ndef = malloc(sizeof(YK_NDEF));
+	if(ndef) {
+		memset(ndef, 0, sizeof(YK_NDEF));
+		return ndef;
+	}
+	return 0;
+}
+
+int ykp_free_ndef(YK_NDEF *ndef)
+{
+	if(ndef)
+	{
+		free(ndef);
+		return 1;
+	}
+	return 0;
+}
+
+/* Fill in the data and len parts of the YK_NDEF struct based on supplied uri. */
+int ykp_construct_ndef_uri(YK_NDEF *ndef, const char *uri)
 {
 	int num_identifiers = sizeof(ndef_identifiers) / sizeof(char*);
-	int index = 0;
-	for(; index < num_identifiers; index++) {
-		size_t len = strlen(ndef_identifiers[index]);
-		if(strncmp(uri, ndef_identifiers[index], len) == 0) {
+	size_t data_length;
+	int indx = 0;
+	for(; indx < num_identifiers; indx++) {
+		size_t len = strlen(ndef_identifiers[indx]);
+		if(strncmp(uri, ndef_identifiers[indx], len) == 0) {
 			uri += len;
 			break;
 		}
 	}
-	size_t data_length = strlen(uri);
+	data_length = strlen(uri);
 	if(data_length + 1 > NDEF_DATA_SIZE) {
 		ykp_errno = YKP_EINVAL;
-		return 1;
+		return 0;
 	}
-	if(index > num_identifiers) {
+	if(indx == num_identifiers) {
 		ndef->data[0] = 0;
 	} else {
-		ndef->data[0] = index + 1;
+		ndef->data[0] = indx + 1;
 	}
 	memcpy(ndef->data + 1, uri, data_length);
 	ndef->len = data_length + 1;
 	ndef->type = 'U';
-	return 0;
+	return 1;
 }
 
-/* Fill in the data and len parts of the YKNDEF struct based on supplied text. */
-int ykp_construct_ndef_text(YKNDEF *ndef, const char *text, const char *lang, bool isutf16)
+/* Fill in the data and len parts of the YK_NDEF struct based on supplied text. */
+int ykp_construct_ndef_text(YK_NDEF *ndef, const char *text, const char *lang, bool isutf16)
 {
 	size_t data_length = strlen(text);
 	size_t lang_length = strlen(lang);
-	char status = lang_length;
+	unsigned char status = lang_length;
 	if(isutf16) {
 		status &= 0x80;
 	}
 	if((data_length + lang_length + 1) > NDEF_DATA_SIZE) {
 		ykp_errno = YKP_EINVAL;
-		return 1;
+		return 0;
 	}
 	ndef->data[0] = status;
 	memcpy(ndef->data + 1, lang, lang_length);
 	memcpy(ndef->data + lang_length + 1, text, data_length);
 	ndef->len = data_length + lang_length + 1;
 	ndef->type = 'T';
+	return 1;
+}
+
+int ykp_ndef_as_text(YK_NDEF *ndef, char *text, size_t len)
+{
+	if(ndef->type == 'U') {
+		const char *part = NULL;
+		size_t offset = 0;
+		if(ndef->data[0] > 0) {
+			part = ndef_identifiers[ndef->data[0] - 1];
+			offset = strlen(part);
+		}
+		if(offset + ndef->len - 1 > len) {
+			ykp_errno = YKP_EINVAL;
+			return 0;
+		}
+		if(part) {
+			memcpy(text, part, offset);
+		}
+		memcpy(text + offset, ndef->data + 1, ndef->len - 1);
+		text[ndef->len + offset] = 0;
+		return 1;
+	}
+	else if(ndef->type == 'T') {
+		unsigned char status = ndef->data[0];
+		if(status & 0x80)
+			status ^= 0x80;
+		if(ndef->len - status - 1 > len) {
+			ykp_errno = YKP_EINVAL;
+			return 0;
+		}
+		memcpy(text, ndef->data + status + 1, ndef->len - status - 1);
+		text[ndef->len - status] = 0;
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+int ykp_set_ndef_access_code(YK_NDEF *ndef, unsigned char *access_code)
+{
+	if(ndef)
+	{
+		memcpy(ndef->curAccCode, access_code, ACC_CODE_SIZE);
+		return 0;
+	}
+	return 1;
+}
+
+YK_DEVICE_CONFIG *ykp_alloc_device_config(void)
+{
+	YK_DEVICE_CONFIG *cfg = malloc(sizeof(YK_DEVICE_CONFIG));
+	if(cfg) {
+		memset(cfg, 0, sizeof(YK_DEVICE_CONFIG));
+		return cfg;
+	}
+	return 0;
+}
+
+int ykp_free_device_config(YK_DEVICE_CONFIG *device_config)
+{
+	if(device_config) {
+		free(device_config);
+		return 1;
+	}
+	return 0;
+}
+
+int ykp_set_device_mode(YK_DEVICE_CONFIG *device_config, unsigned char mode)
+{
+	if(device_config) {
+		device_config->mode = mode;
+		return 1;
+	}
+	ykp_errno = YKP_EINVAL;
+	return 0;
+}
+
+int ykp_set_device_chalresp_timeout(YK_DEVICE_CONFIG *device_config, unsigned char timeout)
+{
+	if(device_config) {
+		device_config->crTimeout = timeout;
+		return 1;
+	}
+	ykp_errno = YKP_EINVAL;
+	return 0;
+}
+
+int ykp_set_device_autoeject_time(YK_DEVICE_CONFIG *device_config, unsigned short eject_time)
+{
+	if(device_config) {
+		device_config->autoEjectTime = eject_time;
+		return 1;
+	}
+	ykp_errno = YKP_EINVAL;
 	return 0;
 }
 
@@ -455,6 +577,19 @@ static bool vcheck_v23_or_greater(const YKP_CONFIG *cfg)
 	return (cfg->yk_major_version == 2 &&
 		cfg->yk_minor_version >= 3) ||
 		cfg->yk_major_version > 2;
+}
+
+static bool vcheck_v24_or_greater(const YKP_CONFIG *cfg)
+{
+	return (cfg->yk_major_version == 2 &&
+		cfg->yk_minor_version >= 4) ||
+		cfg->yk_major_version > 2;
+}
+
+static bool vcheck_v30(const YKP_CONFIG *cfg)
+{
+	return (cfg->yk_major_version == 3 &&
+		cfg->yk_minor_version == 0);
 }
 
 static bool vcheck_neo(const YKP_CONFIG *cfg)
@@ -548,6 +683,11 @@ static bool capability_has_numeric(const YKP_CONFIG *cfg)
 static bool capability_has_dormant(const YKP_CONFIG *cfg)
 {
 	return vcheck_v23_or_greater(cfg);
+}
+
+static bool capability_has_led_inv(const YKP_CONFIG *cfg)
+{
+	return (vcheck_v24_or_greater(cfg) && !vcheck_v30(cfg));
 }
 
 int ykp_set_oath_imf(YKP_CONFIG *cfg, unsigned long imf)
@@ -700,6 +840,7 @@ def_set_extflag(USE_NUMERIC_KEYPAD,capability_has_numeric)
 def_set_extflag(FAST_TRIG,capability_has_fast)
 def_set_extflag(ALLOW_UPDATE,capability_has_update)
 def_set_extflag(DORMANT,capability_has_dormant)
+def_set_extflag(LED_INV,capability_has_led_inv)
 
 const char str_key_value_separator[] = ": ";
 const char str_hex_prefix[] = "h:";
@@ -731,7 +872,7 @@ struct map_st ticket_flags_map[] = {
 	{ TKTFLAG_PROTECT_CFG2,		"PROTECT_CFG2",		capability_has_slot_two,	0 },
 	{ TKTFLAG_OATH_HOTP,		"OATH_HOTP",		capability_has_oath,		0 },
 	{ TKTFLAG_CHAL_RESP,		"CHAL_RESP",		capability_has_chal_resp,	0 },
-	{ 0, "", 0 }
+	{ 0, "", 0, 0 }
 };
 
 const char str_config_flags[] = "config_flags";
@@ -765,7 +906,7 @@ struct map_st config_flags_map[] = {
 	{ CFGFLAG_STRONG_PW1,		"STRONG_PW1",		capability_has_static_extras,	0 },
 	{ CFGFLAG_STRONG_PW2,		"STRONG_PW2",		capability_has_static_extras,	0 },
 	{ CFGFLAG_MAN_UPDATE,		"MAN_UPDATE",		capability_has_static_extras,	0 },
-	{ 0, "" }
+	{ 0, "", 0, 0 }
 };
 
 const char str_extended_flags[] = "extended_flags";
@@ -777,7 +918,8 @@ struct map_st extended_flags_map[] = {
 	{ EXTFLAG_FAST_TRIG,		"FAST_TRIG",		capability_has_fast,		0 },
 	{ EXTFLAG_ALLOW_UPDATE,		"ALLOW_UPDATE",		capability_has_update,		0 },
 	{ EXTFLAG_DORMANT,		"DORMANT",		capability_has_dormant,		0 },
-	{ 0, "", 0 }
+	{ EXTFLAG_LED_INV,		"LED_INV",		capability_has_led_inv,		0 },
+	{ 0, "", 0, 0 }
 };
 
 int ykp_write_config(const YKP_CONFIG *cfg,
@@ -807,22 +949,22 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 			if ((cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX1) == CFGFLAG_OATH_FIXED_MODHEX1 ||
 			    (cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX2) == CFGFLAG_OATH_FIXED_MODHEX2 ||
 			    (cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX) == CFGFLAG_OATH_FIXED_MODHEX) {
-				yubikey_modhex_encode(buffer, (char *)cfg->ykcore_config.fixed, 1);
+				yubikey_modhex_encode(buffer, (const char *)cfg->ykcore_config.fixed, 1);
 			} else {
-				yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.fixed, 1);
+				yubikey_hex_encode(buffer, (const char *)cfg->ykcore_config.fixed, 1);
 			}
 			/* Second byte (token type) */
 			if ((cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX2) == CFGFLAG_OATH_FIXED_MODHEX2 ||
 			    (cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX) == CFGFLAG_OATH_FIXED_MODHEX) {
-				yubikey_modhex_encode(buffer + 2, (char *)cfg->ykcore_config.fixed + 1, 1);
+				yubikey_modhex_encode(buffer + 2, (const char *)cfg->ykcore_config.fixed + 1, 1);
 			} else {
-				yubikey_hex_encode(buffer + 2, (char *)cfg->ykcore_config.fixed + 1, 1);
+				yubikey_hex_encode(buffer + 2, (const char *)cfg->ykcore_config.fixed + 1, 1);
 			}
 			/* bytes 3-12 - MUI */
 			if ((cfg->ykcore_config.cfgFlags & CFGFLAG_OATH_FIXED_MODHEX) == CFGFLAG_OATH_FIXED_MODHEX) {
-				yubikey_modhex_encode(buffer + 4, (char *)cfg->ykcore_config.fixed + 2, 8);
+				yubikey_modhex_encode(buffer + 4, (const char *)cfg->ykcore_config.fixed + 2, 8);
 			} else {
-				yubikey_hex_encode(buffer + 4, (char *)cfg->ykcore_config.fixed + 2, 8);
+				yubikey_hex_encode(buffer + 4, (const char *)cfg->ykcore_config.fixed + 2, 8);
 			}
 			buffer[12] = 0;
 			writer(buffer, strlen(buffer), userdata);
@@ -835,7 +977,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 			writer(str_modhex_prefix,
 			       strlen(str_modhex_prefix),
 			       userdata);
-			yubikey_modhex_encode(buffer, (char *)cfg->ykcore_config.fixed, cfg->ykcore_config.fixedSize);
+			yubikey_modhex_encode(buffer, (const char *)cfg->ykcore_config.fixed, cfg->ykcore_config.fixedSize);
 			writer(buffer, strlen(buffer), userdata);
 			writer("\n", 1, userdata);
 		}
@@ -851,7 +993,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 			writer(str_hex_prefix,
 			       strlen(str_hex_prefix),
 			       userdata);
-			yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.uid, UID_SIZE);
+			yubikey_hex_encode(buffer, (const char *)cfg->ykcore_config.uid, UID_SIZE);
 			writer(buffer, strlen(buffer), userdata);
 		}
 		writer("\n", 1, userdata);
@@ -864,9 +1006,9 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 		writer(str_hex_prefix,
 		       strlen(str_hex_prefix),
 		       userdata);
-		yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.key, KEY_SIZE);
+		yubikey_hex_encode(buffer, (const char *)cfg->ykcore_config.key, KEY_SIZE);
 		if (key_bits_in_uid) {
-			yubikey_hex_encode(buffer + KEY_SIZE * 2, (char *)cfg->ykcore_config.uid, 4);
+			yubikey_hex_encode(buffer + KEY_SIZE * 2, (const char *)cfg->ykcore_config.uid, 4);
 		}
 		writer(buffer, strlen(buffer), userdata);
 		writer("\n", 1, userdata);
@@ -879,7 +1021,7 @@ int ykp_write_config(const YKP_CONFIG *cfg,
 		writer(str_hex_prefix,
 		       strlen(str_hex_prefix),
 		       userdata);
-		yubikey_hex_encode(buffer, (char *)cfg->ykcore_config.accCode, ACC_CODE_SIZE);
+		yubikey_hex_encode(buffer, (const char*)cfg->ykcore_config.accCode, ACC_CODE_SIZE);
 		writer(buffer, strlen(buffer), userdata);
 		writer("\n", 1, userdata);
 
@@ -1007,7 +1149,7 @@ int ykp_config_num(YKP_CONFIG *cfg)
 	return 0;
 }
 
-int * const _ykp_errno_location(void)
+int * _ykp_errno_location(void)
 {
 	static int tsd_init = 0;
 	static int nothread_errno = 0;
@@ -1016,15 +1158,18 @@ int * const _ykp_errno_location(void)
 
 	if (tsd_init == 0) {
 		if ((rc = YK_TSD_INIT(errno_key, free)) == 0) {
-			void *p = calloc(1, sizeof(int));
-			if (!p) {
-				tsd_init = -1;
-			} else {
-				YK_TSD_SET(errno_key, p);
-				tsd_init = 1;
-			}
+			tsd_init = 1;
 		} else {
 			tsd_init = -1;
+		}
+	}
+
+	if(YK_TSD_GET(int *, errno_key) == NULL) {
+		void *p = calloc(1, sizeof(int));
+		if (!p) {
+			tsd_init = -1;
+		} else {
+			YK_TSD_SET(errno_key, p);
 		}
 	}
 	if (tsd_init == 1) {

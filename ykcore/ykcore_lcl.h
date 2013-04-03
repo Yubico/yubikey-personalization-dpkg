@@ -39,6 +39,7 @@
 #define yk_config_st config_st
 #define yk_nav_st nav_st
 #define yk_frame_st frame_st
+#define yk_device_config_st device_config_st
 
 #include "ykcore.h"
 #include "ykdef.h"
@@ -64,8 +65,6 @@
 extern int yk_read_from_key(YK_KEY *k, uint8_t slot,
 			    void *buf, unsigned int bufsize,
 			    unsigned int *bufcount);
-extern int yk_write_to_key(YK_KEY *k, uint8_t slot,
-			   const void *buf, int bufcount);
 
 /*************************************************************************
  *

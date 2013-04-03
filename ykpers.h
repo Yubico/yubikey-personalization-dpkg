@@ -66,9 +66,19 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 				const char *salt);
 int ykp_HMAC_key_from_hex(YKP_CONFIG *cfg, const char *hexkey);
 
-/* Functions for constructing the YKNDEF struct before writing it to a neo */
-int ykp_construct_ndef_uri(YKNDEF *ndef, const char *uri);
-int ykp_construct_ndef_text(YKNDEF *ndef, const char *text, const char *lang, bool isutf16);
+/* Functions for constructing the YK_NDEF struct before writing it to a neo */
+YK_NDEF *ykp_alloc_ndef(void);
+int ykp_free_ndef(YK_NDEF *ndef);
+int ykp_construct_ndef_uri(YK_NDEF *ndef, const char *uri);
+int ykp_construct_ndef_text(YK_NDEF *ndef, const char *text, const char *lang, bool isutf16);
+int ykp_set_ndef_access_code(YK_NDEF *ndef, unsigned char *access_code);
+int ykp_ndef_as_text(YK_NDEF *ndef, char *text, size_t len);
+
+YK_DEVICE_CONFIG *ykp_alloc_device_config(void);
+int ykp_free_device_config(YK_DEVICE_CONFIG *device_config);
+int ykp_set_device_mode(YK_DEVICE_CONFIG *device_config, unsigned char mode);
+int ykp_set_device_chalresp_timeout(YK_DEVICE_CONFIG *device_config, unsigned char timeout);
+int ykp_set_device_autoeject_time(YK_DEVICE_CONFIG *device_config, unsigned short eject_time);
 
 int ykp_set_access_code(YKP_CONFIG *cfg, unsigned char *access_code, size_t len);
 int ykp_set_fixed(YKP_CONFIG *cfg, unsigned char *fixed, size_t len);
@@ -112,6 +122,7 @@ int ykp_set_extflag_USE_NUMERIC_KEYPAD (YKP_CONFIG *cfg, bool state);
 int ykp_set_extflag_FAST_TRIG (YKP_CONFIG *cfg, bool state);
 int ykp_set_extflag_ALLOW_UPDATE (YKP_CONFIG *cfg, bool state);
 int ykp_set_extflag_DORMANT (YKP_CONFIG *cfg, bool state);
+int ykp_set_extflag_LED_INV (YKP_CONFIG *cfg, bool state);
 
 int ykp_write_config(const YKP_CONFIG *cfg,
 		     int (*writer)(const char *buf, size_t count,
@@ -126,7 +137,7 @@ YK_CONFIG *ykp_core_config(YKP_CONFIG *cfg);
 int ykp_command(YKP_CONFIG *cfg);
 int ykp_config_num(YKP_CONFIG *cfg);
 
-extern int * const _ykp_errno_location(void);
+extern int * _ykp_errno_location(void);
 #define ykp_errno (*_ykp_errno_location())
 const char *ykp_strerror(int errnum);
 

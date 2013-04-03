@@ -47,21 +47,18 @@ static IOReturn _ykusb_IOReturn = 0;
 int _ykusb_start(void)
 {
 	ykosxManager = IOHIDManagerCreate( kCFAllocatorDefault, 0L );
-	
+
 	return 1;
 }
 
 int _ykusb_stop(void)
 {
 	if (ykosxManager != NULL) {
-		_ykusb_IOReturn = IOHIDManagerClose( ykosxManager, 0L );
-	
-		if (_ykusb_IOReturn == kIOReturnSuccess) {
-			ykosxManager = NULL;
-			return 1;
-		}
+		CFRelease(ykosxManager);
+		ykosxManager = NULL;
+		return 1;
 	}
-	
+
 	yk_errno = YK_EUSBERR;
 	return 0;
 }
@@ -71,71 +68,100 @@ static void _ykosx_CopyToCFArray(const void *value, void *context)
 	CFArrayAppendValue( ( CFMutableArrayRef ) context, value );
 }
 
-void *_ykusb_open_device(int vendor_id, int product_id)
+static int _ykosx_getIntProperty( IOHIDDeviceRef dev, CFStringRef key ) {
+	int result = 0;
+	CFTypeRef tCFTypeRef = IOHIDDeviceGetProperty( dev, key );
+	if ( tCFTypeRef ) {
+		if ( CFNumberGetTypeID( ) == CFGetTypeID( tCFTypeRef ) ) {
+			CFNumberGetValue( ( CFNumberRef ) tCFTypeRef, kCFNumberSInt32Type, &result );
+		}
+	}
+	return result;
+}
+
+void *_ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len)
 {
 	void *yk = NULL;
-	CFDictionaryRef dict;
-	CFStringRef keys[2];
-	CFStringRef values[2];
-	
-	yk_errno = YK_EUSBERR;
-	
-	CFNumberRef vendorID = CFNumberCreate( kCFAllocatorDefault, kCFNumberIntType, &vendor_id );
-	CFNumberRef productID = CFNumberCreate( kCFAllocatorDefault, kCFNumberIntType, &product_id );
-	
-	keys[0] = CFSTR( kIOHIDVendorIDKey );  values[0] = (void *) vendorID;
-	keys[1] = CFSTR( kIOHIDProductIDKey ); values[1] = (void *) productID;
 
-	dict = CFDictionaryCreate( kCFAllocatorDefault, (const void **) &keys, (const void **) &values, 1, NULL, NULL);
+	int rc = YK_ENOKEY;
 
-	IOHIDManagerSetDeviceMatching( ykosxManager, dict );
-	
+	size_t i;
+
+	IOHIDManagerSetDeviceMatchingMultiple( ykosxManager, NULL );
+
 	CFSetRef devSet = IOHIDManagerCopyDevices( ykosxManager );
-	
+
 	if ( devSet ) {
-		
 		CFMutableArrayRef array = CFArrayCreateMutable( kCFAllocatorDefault, 0, NULL );
-		
+
 		CFSetApplyFunction( devSet, _ykosx_CopyToCFArray, array );
 
 		CFIndex cnt = CFArrayGetCount( array );
-		
-		if (cnt > 0) {
-			yk = (void *) CFArrayGetValueAtIndex( array, 0 );
+
+		CFIndex i;
+
+		for(i = 0; i < cnt; i++) {
+			IOHIDDeviceRef dev = (IOHIDDeviceRef)CFArrayGetValueAtIndex( array, i );
+			long devVendorId = _ykosx_getIntProperty( dev, CFSTR( kIOHIDVendorIDKey ));
+			if(devVendorId == vendor_id) {
+				long devProductId = _ykosx_getIntProperty( dev, CFSTR( kIOHIDProductIDKey ));
+				size_t j;
+				for(j = 0; j < pids_len; j++) {
+					if(product_ids[j] == devProductId) {
+						if(yk == NULL) {
+							yk = dev;
+							break;
+						} else {
+							rc = YK_EMORETHANONE;
+							break;
+						}
+					}
+				}
+			}
+			if(rc == YK_EMORETHANONE) {
+				yk = NULL;
+				break;
+			}
 		}
-		else
-			yk_errno = YK_ENOKEY;
-		
+
+		if(rc != YK_EMORETHANONE) {
+			rc = YK_ENOKEY;
+		}
+
+		/* this is a workaround for a memory leak in IOHIDManagerCopyDevices() in 10.8 */
+		IOHIDManagerScheduleWithRunLoop( ykosxManager, CFRunLoopGetCurrent( ), kCFRunLoopDefaultMode );
+		IOHIDManagerUnscheduleFromRunLoop( ykosxManager, CFRunLoopGetCurrent( ), kCFRunLoopDefaultMode );
+
 		CFRelease( array );
 		CFRelease( devSet );
 	}
-	
-	CFRelease( dict );
-	CFRelease( vendorID );
-	CFRelease( productID );
-	
+
 	if (yk) {
+		CFRetain(yk);
 		_ykusb_IOReturn = IOHIDDeviceOpen( yk, 0L );
-		
+
 		if ( _ykusb_IOReturn != kIOReturnSuccess ) {
-			yk_release();
-			return 0;
+			CFRelease(yk);
+			rc = YK_EUSBERR;
+			goto error;
 		}
 
-		yk_errno = 0;
 		return yk;
 	}
-	
+
+error:
+	yk_errno = rc;
 	return 0;
 }
 
 int _ykusb_close_device(void *dev)
 {
 	_ykusb_IOReturn = IOHIDDeviceClose( dev, 0L );
-	
+	CFRelease(dev);
+
 	if ( _ykusb_IOReturn == kIOReturnSuccess )
 		return 1;
-	
+
 	yk_errno = YK_EUSBERR;
 	return 0;
 }
@@ -150,9 +176,9 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 		yk_errno = YK_ENOTYETIMPL;
 		return 0;
 	}
-	
+
 	_ykusb_IOReturn = IOHIDDeviceGetReport( dev, kIOHIDReportTypeFeature, report_number, (uint8_t *)buffer, (CFIndex *) &sizecf );
-	
+
 	if ( _ykusb_IOReturn != kIOReturnSuccess )
 	{
 		yk_errno = YK_EUSBERR;
@@ -170,20 +196,42 @@ int _ykusb_write(void *dev, int report_type, int report_number,
 		yk_errno = YK_ENOTYETIMPL;
 		return 0;
 	}
-	
+
 	_ykusb_IOReturn = IOHIDDeviceSetReport( dev, kIOHIDReportTypeFeature, report_number, (unsigned char *)buffer, size);
-	
+
 	if ( _ykusb_IOReturn != kIOReturnSuccess )
 	{
 		yk_errno = YK_EUSBERR;
 		return 0;
 	}
-	
+
 	return 1;
 }
 
 const char *_ykusb_strerror()
 {
-	return "USB error\n";
-//	fprintf(out, "USB error: %x\n", _ykusb_IOReturn);
+	switch (_ykusb_IOReturn) {
+		case kIOReturnSuccess:
+			return "kIOReturnSuccess";
+		case kIOReturnNotOpen:
+			return "kIOReturnNotOpen";
+		case kIOReturnNoDevice:
+			return "kIOReturnNoDevice";
+		case kIOReturnExclusiveAccess:
+			return "kIOReturnExclusiveAccess";
+		case kIOReturnError:
+			return "kIOReturnError";
+		case kIOReturnBadArgument:
+			return "kIOReturnBadArgument";
+		case kIOReturnAborted:
+			return "kIOReturnAborted";
+		case kIOReturnNotResponding:
+			return "kIOReturnNotResponding";
+		case kIOReturnOverrun:
+			return "kIOReturnOverrun";
+		case kIOReturnCannotWire:
+			return "kIOReturnCannotWire";
+		default:
+			return "unknown error";
+	}
 }

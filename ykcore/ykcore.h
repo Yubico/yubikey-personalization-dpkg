@@ -62,6 +62,8 @@ typedef struct yk_config_st YK_CONFIG;	/* Configuration structure.
 typedef struct yk_nav_st YK_NAV;	/* Navigation structure.
 					   Other libraries provide access. */
 typedef struct yk_frame_st YK_FRAME;	/* Data frame for write operation */
+typedef struct ndef_st YK_NDEF;
+typedef struct yk_device_config_st YK_DEVICE_CONFIG;
 
 /*************************************************************************
  *
@@ -88,6 +90,7 @@ extern int yk_close_key(YK_KEY *k);		/* closes a previously opened key */
 extern int yk_get_status(YK_KEY *k, YK_STATUS *status /*, int forceUpdate */);
 /* checks that the firmware revision of the key is supported */
 extern int yk_check_firmware_version(YK_KEY *k);
+extern int yk_check_firmware_version2(YK_STATUS *status);
 /* Read the factory set serial number from a YubiKey 2.0 or higher. */
 extern int yk_get_serial(YK_KEY *yk, uint8_t slot, unsigned int flags, unsigned int *serial);
 /* Wait for the key to either set or clear bits in it's status byte */
@@ -114,8 +117,20 @@ extern int yk_write_command(YK_KEY *k, YK_CONFIG *cfg, uint8_t command,
 /* wrapper function of yk_write_command */
 extern int yk_write_config(YK_KEY *k, YK_CONFIG *cfg, int confnum,
 			   unsigned char *acc_code);
+/* writes the given ndef to the key as SLOT_NDEF */
+extern int yk_write_ndef(YK_KEY *yk, YK_NDEF *ndef);
+/* writes the given ndef to the key. */
+extern int yk_write_ndef2(YK_KEY *yk, YK_NDEF *ndef, int confnum);
+/* writes a device config block to the key. */
+extern int yk_write_device_config(YK_KEY *yk, YK_DEVICE_CONFIG *device_config);
+/* writes a scanmap to the key. */
+extern int yk_write_scan_map(YK_KEY *yk, unsigned char *scan_map);
 /* Write something to the YubiKey (a command that is). */
 extern int yk_write_to_key(YK_KEY *yk, uint8_t slot, const void *buf, int bufcount);
+/* Do a challenge-response round with the key. */
+extern int yk_challenge_response(YK_KEY *yk, uint8_t yk_cmd, int may_block,
+				 unsigned int challenge_len, const unsigned char *challenge,
+				 unsigned int response_len, unsigned char *response);
 
 extern int yk_force_key_update(YK_KEY *yk);
 
@@ -124,13 +139,13 @@ extern int yk_force_key_update(YK_KEY *yk);
  * Error handling fuctions
  *
  ****/
-extern int * const _yk_errno_location(void);
+extern int * _yk_errno_location(void);
 #define yk_errno (*_yk_errno_location())
 const char *yk_strerror(int errnum);
 /* The following function is only useful if yk_errno == YK_EUSBERR and
    no other USB-related operations have been performed since the time of
    error.  */
-const char *yk_usb_strerror();
+const char *yk_usb_strerror(void);
 
 #define YK_EUSBERR	0x01	/* USB error reporting should be used */
 #define YK_EWRONGSIZ	0x02
@@ -143,6 +158,8 @@ const char *yk_usb_strerror();
 #define YK_ENOTYETIMPL	0x09
 #define YK_ECHECKSUM	0x0a	/* checksum validation failed */
 #define YK_EWOULDBLOCK	0x0b	/* operation would block */
+#define YK_EINVALIDCMD	0x0c	/* supplied command is invalid for this operation */
+#define YK_EMORETHANONE	0x0d    /* expected to find only one key but found more */
 
 /* Flags for response reading. Use high numbers to not exclude the possibility
  * to combine these with for example SLOT commands from ykdef.h in the future.

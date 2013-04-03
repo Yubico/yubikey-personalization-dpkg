@@ -30,66 +30,60 @@
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
 .if \n[.g] .mso www.tmac
-.TH ykchalresp "1" "Febuary 2011" "yubikey-personalization"
+.TH ykinfo "1" "October 2012" "yubikey-personalization"
 .SH NAME
-ykchalresp - Perform challenge-response operation with YubiKey
+ykinfo - Get basic information from a YubiKey
 .SH SYNOPSIS
-.B ykchalresp
-[\fI-1\fR | \fI-2\fR] [\fI-H\fR] [\fI-Y\fR] [\fI-N\fR] [\fI-x\fR] [\fI-v\fR] [\fI-h\fR]
+.B ykinfo
+[\fI-s\fR] [\fI-m\fR] [\fI-H\fR] [\fI-v\fR] [\fI-t\fR] [\fI-p\fR] [\fI-q\fR] [\fI-h\fR]
 .SH DESCRIPTION
 .PP
-Send a challenge to a YubiKey, and read the response.  The YubiKey can be configured
-with two different C/R modes -- the standard one is a 160 bits HMAC-SHA1, and the other
-is a YubiKey OTP mimicing mode, meaning two subsequent calls with the same challenge
-will result in different responses.
+Get basic information from a YubiKey. Can get serial number, version and current
+touch level. Can get all parameters at once or one at a time.  If -q is given only
+the relevant string from the YubiKey is written to screen.
 .SH OPTIONS
 .TP
-\fB\-1\fR
-send the challenge to slot 1.  This is the default.
+\fB\-s\fR
+get the serial number and output it.
 .TP
-\fB\-2\fR
-send the challenge to slot 2.
+\fB\-m\fR
+get the serial number and output it as modhex.
 .TP
 \fB\-H\fR
-send a 64 byte HMAC challenge.  This is the default.
-.TP
-\fB\-Y\fR
-send a 6 byte Yubico OTP challenge.
-.TP
-\fB\-N\fR
-non-blocking mode -- abort if the YubiKey is configured to require a key press before
-sending the response.
-.TP
-\fB\-x\fR
-challenge is hex encoded.
+get the serial number and output it as hex.
 .TP
 \fB\-v\fR
-enable verbose mode.
+get the version and output it.
+.TP
+\fB\-t\fR
+get the touch level and output it.
+.TP
+\fB\-p\fR
+get the programming sequence and output it.
+.TP
+\fB\-a\fR
+get all the information above.
+.TP
+\fB\-q\fR
+modifier, only show the relevant data from the YubiKey, no extra information.
+.TP
 
 .SH EXAMPLE
-The YubiKey challenge-response operation can be demonstrated using the
-\fBNIST PUB 198 A.2\fR test vector.
-.P
-First, program a YubiKey with the test vector :
-.HP
+Output of all information from a YubiKey
+
 .nf
-$ \fBykpersonalize \-2 \-ochal\-resp \-ochal\-hmac \-ohmac\-lt64 \-a 303132333435363738393a3b3c3d3e3f40414243\fR
- ...
-Commit? (y/n) [n]: y
-$
-.fi
-.HP
-Now, send the NIST test challenge to the YubiKey and verify the result matches the
-expected :
-.HP
-.nf
-$ \fBykchalresp \-2 'Sample #2'\fR
-0922d3405faa3d194f82a45830737d5cc6c75d24
+$ \fBykinfo \-s \-m \-H \-v \-t \-p\fR
+serial: 1077254
+serial_hex: 107006
+serial_modhex: bcicch
+version: 2.2.3
+touch_level: 1793
+programming_sequence: 1
 $
 .fi
 
 .SH BUGS
-Report ykchalresp bugs in
+Report ykinfo bugs in
 .URL "https://github.com/Yubico/yubikey-personalization/issues" "the issue tracker"
 .SH "SEE ALSO"
 The
