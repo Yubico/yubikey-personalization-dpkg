@@ -1,4 +1,4 @@
-yubikey-personalization (1.12.0-1) unstable; urgency=low
+yubikey-personalization (1.12.0-1) experimental; urgency=low
 
   * New upstream version.
   * Update .symbols file for new symbols.
