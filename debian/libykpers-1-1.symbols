@@ -89,3 +89,25 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykp_set_extflag_DORMANT@LIBYKPERS_1.7 1.7.0-1
  ykp_set_extflag_FAST_TRIG@LIBYKPERS_1.7 1.7.0-1
  ykp_set_extflag_USE_NUMERIC_KEYPAD@LIBYKPERS_1.7 1.7.0-1
+ LIBYKPERS_1.8@LIBYKPERS_1.8 1.12.0
+ yk_challenge_response@LIBYKPERS_1.8 1.12.0
+ ykp_alloc_ndef@LIBYKPERS_1.8 1.12.0
+ ykp_free_ndef@LIBYKPERS_1.8 1.12.0
+ ykp_set_ndef_access_code@LIBYKPERS_1.8 1.12.0
+ LIBYKPERS_1.9@LIBYKPERS_1.9 1.12.0
+ yk_hmac_sha1@LIBYKPERS_1.9 1.12.0
+ LIBYKPERS_1.10@LIBYKPERS_1.10 1.12.0
+ yk_check_firmware_version2@LIBYKPERS_1.10 1.12.0
+ yk_write_device_config@LIBYKPERS_1.10 1.12.0
+ yk_write_ndef2@LIBYKPERS_1.10 1.12.0
+ yk_write_scan_map@LIBYKPERS_1.10 1.12.0
+ ykp_alloc_device_config@LIBYKPERS_1.10 1.12.0
+ ykp_free_device_config@LIBYKPERS_1.10 1.12.0
+ ykp_ndef_as_text@LIBYKPERS_1.10 1.12.0
+ ykp_set_device_autoeject_time@LIBYKPERS_1.10 1.12.0
+ ykp_set_device_chalresp_timeout@LIBYKPERS_1.10 1.12.0
+ ykp_set_device_mode@LIBYKPERS_1.10 1.12.0
+ LIBYKPERS_1.11@LIBYKPERS_1.11 1.12.0
+ ykpers_check_version@LIBYKPERS_1.11 1.12.0
+ LIBYKPERS_1.12@LIBYKPERS_1.12 1.12.0
+ ykp_set_extflag_LED_INV@LIBYKPERS_1.12 1.12.0
