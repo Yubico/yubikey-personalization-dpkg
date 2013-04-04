@@ -1,7 +1,8 @@
 The recommended way to get the git repo of this package is to clone
 the git repository and then use gitpkg(1).
 
-For gitpkg to do its work best, you should have the following settings in .git/config:
+For gitpkg to do its work best, you should have the following settings
+in .git/config:
 
 [gitpkg]
 	deb-export-hook = /usr/share/gitpkg/hooks/quilt-patches-deb-export-hook
@@ -13,4 +14,45 @@ After you have hacked on the source and committed, run gitpkg HEAD (or
 gitpkg $treeish) and you get a source package in
 ../deb-packages/yubikey-personalization/.
 
+Example initial checkout:
+
+$ git clone git@git.err.no:yubikey-personalization yubikey-personalization-dpkg
+$ cd yubikey-personalization-dpkg
+
+To merge in a new upstream version do:
+
+$ git remote add yubico git@github.com:Yubico/yubikey-personalization.git
+$ git pull yubico
+$ git checkout master
+$ git merge <tag-of-the-new-release>
+$ git checkout debian
+$ git merge master
+[update debian/ files and commit as appropriate]
+$ git tag -s yubikey-personalization_$debversion
+
+Preserve the upstream tarball:
+
+$ cp ../path/to/ykpers-1.12.0.tar.gz yubikey-personalization_1.12.0.orig.tar.gz
+$ pristine-tar commit yubikey-personalization_1.12.0.orig.tar.gz master
+
+To build the package you first initialize cowbuilder, for example:
+
+$ sudo cowbuilder --create --distribution sid --mirror ftp://ftp.se.debian.org/debian/ --debootstrapopts "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg" --basepath /var/cache/pbuilder/base-debian-sid.cow
+
+Optionally update cowbuilder:
+
+$ sudo cowbuilder --update --basepath /var/cache/pbuilder/base-debian-sid.cow
+
+Build the package:
+
+$ pristine-tar checkout yubikey-personalization_1.12.0.orig.tar.gz
+$ cp yubikey-personalization_1.12.0.orig.tar.gz ../deb-packages/yubikey-personalization/
+$ gitpkg HEAD
+$ cd ../deb-packages/yubikey-personalization/yubikey-personalization-$VER/
+$ pdebuild --auto-debsign --pbuilder cowbuilder -- --basepath /var/cache/pbuilder/base-debian-sid.cow
+
+If all goes well, you should have newly built packages in
+/var/cache/pbuilder/result/.
+
  -- Tollef Fog Heen <tfheen@debian.org>, Fri,  9 Dec 2011 23:24:53 +0100
+ -- Simon Josefsson <simon@josefsson.org>, Thu, 04 Apr 2013 09:03:50 +0200
