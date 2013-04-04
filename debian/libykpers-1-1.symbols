@@ -76,19 +76,19 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  LIBYKPERS_1.6@LIBYKPERS_1.6 1.6.1
  ykp_get_oath_imf@LIBYKPERS_1.6 1.6.1
  ykp_set_oath_imf@LIBYKPERS_1.6 1.6.1
- LIBYKPERS_1.7@LIBYKPERS_1.7 1.7.0-1
- yk_write_command@LIBYKPERS_1.7 1.7.0-1
- yk_write_ndef@LIBYKPERS_1.7 1.7.0-1
- ykp_alloc@LIBYKPERS_1.7 1.7.0-1
- ykp_command@LIBYKPERS_1.7 1.7.0-1
- ykp_configure_command@LIBYKPERS_1.7 1.7.0-1
- ykp_configure_version@LIBYKPERS_1.7 1.7.0-1
- ykp_construct_ndef_text@LIBYKPERS_1.7 1.7.0-1
- ykp_construct_ndef_uri@LIBYKPERS_1.7 1.7.0-1
- ykp_set_extflag_ALLOW_UPDATE@LIBYKPERS_1.7 1.7.0-1
- ykp_set_extflag_DORMANT@LIBYKPERS_1.7 1.7.0-1
- ykp_set_extflag_FAST_TRIG@LIBYKPERS_1.7 1.7.0-1
- ykp_set_extflag_USE_NUMERIC_KEYPAD@LIBYKPERS_1.7 1.7.0-1
+ LIBYKPERS_1.7@LIBYKPERS_1.7 1.7.0
+ yk_write_command@LIBYKPERS_1.7 1.7.0
+ yk_write_ndef@LIBYKPERS_1.7 1.7.0
+ ykp_alloc@LIBYKPERS_1.7 1.7.0
+ ykp_command@LIBYKPERS_1.7 1.7.0
+ ykp_configure_command@LIBYKPERS_1.7 1.7.0
+ ykp_configure_version@LIBYKPERS_1.7 1.7.0
+ ykp_construct_ndef_text@LIBYKPERS_1.7 1.7.0
+ ykp_construct_ndef_uri@LIBYKPERS_1.7 1.7.0
+ ykp_set_extflag_ALLOW_UPDATE@LIBYKPERS_1.7 1.7.0
+ ykp_set_extflag_DORMANT@LIBYKPERS_1.7 1.7.0
+ ykp_set_extflag_FAST_TRIG@LIBYKPERS_1.7 1.7.0
+ ykp_set_extflag_USE_NUMERIC_KEYPAD@LIBYKPERS_1.7 1.7.0
  LIBYKPERS_1.8@LIBYKPERS_1.8 1.12.0
  yk_challenge_response@LIBYKPERS_1.8 1.12.0
  ykp_alloc_ndef@LIBYKPERS_1.8 1.12.0
