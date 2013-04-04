@@ -12,6 +12,7 @@ yubikey-personalization (1.12.0-2) experimental; urgency=low
   * Improve package descriptions (lintian duplicate-short-description).
   * Drop Fredrik as uploader, add Klas and Dain.
   * Remove obsolete 'DM-Upload-Allowed'.
+  * Add debian/source/options for files that are in git but not in tarball.
 
  -- Simon Josefsson <simon@yubico.com>  Thu, 04 Apr 2013 09:11:36 +0200
 
