@@ -1,1 +1,2 @@
 usr/lib/*/libykpers-1.so.*
+lib/udev/rules.d/70-yubikey.rules

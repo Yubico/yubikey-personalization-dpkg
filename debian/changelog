@@ -1,3 +1,9 @@
+yubikey-personalization (1.12.0-4) unstable; urgency=low
+
+  * Move udev file to libykpers package.  Closes: #692967.
+
+ -- Simon Josefsson <simon@yubico.com>  Thu, 04 Apr 2013 15:07:36 +0200
+
 yubikey-personalization (1.12.0-3) unstable; urgency=low
 
   * Moved from experimental to unstable after testing.  Closes: #697138.
