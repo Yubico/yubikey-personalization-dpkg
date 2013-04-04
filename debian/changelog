@@ -1,6 +1,7 @@
 yubikey-personalization (1.12.0-2) experimental; urgency=low
 
-  * Fix .symbols file for 1.7 release.
+  * Fix .symbols file for 1.7 release (lintian
+    symbols-file-contains-debian-revision).
   * Drop duplicate Homepage: fields in control file (lintian
     binary-control-field-duplicates-source).
 
