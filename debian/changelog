@@ -1,5 +1,6 @@
-yubikey-personalization (1.12.0-3) experimental; urgency=low
+yubikey-personalization (1.12.0-3) unstable; urgency=low
 
+  * Moved from experimental to unstable after testing.  Closes: #697138.
   * Disable silent rules (W-compiler-flags-hidden).
   * Use machine readable copyright file.
 
