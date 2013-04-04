@@ -9,6 +9,7 @@ yubikey-personalization (1.12.0-2) experimental; urgency=low
   * Use "3.0 (quilt)" in new source/format file.
   * Bump debhelper version requirement (lintian
     package-needs-versioned-debhelper-build-depends).
+  * Improve package descriptions (lintian duplicate-short-description).
 
  -- Simon Josefsson <simon@yubico.com>  Thu, 04 Apr 2013 09:11:36 +0200
 

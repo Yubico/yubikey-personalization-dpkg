@@ -14,7 +14,7 @@ Package: yubikey-personalization
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Personalization tool for Yubikey OTP tokens
- Yubikeys are USB tokens that act like keyboards and generate one-time
+ YubiKeys are USB tokens that act like keyboards and generate one-time
  or static passwords.
  .
  This is a tool to customize the tokens with your own cryptographic
@@ -26,19 +26,19 @@ Section: libs
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Multi-Arch: same
-Description: Personalization tool for Yubikey OTP tokens
- Yubikeys are USB tokens that act like keyboards and generate one-time
+Description: Library for personalization of YubiKey OTP tokens
+ YubiKeys are USB tokens that act like keyboards and generate one-time
  or static passwords.
  .
  This package contains the run-time shared library needed for the
- personalization tool.
+ personalization tool.  You normally don't need to install it manually.
 
 Package: libykpers-1-dev
 Architecture: any
 Section: libdevel
 Depends: ${shlibs:Depends}, ${misc:Depends}, libykpers-1-1 (= ${binary:Version})
-Description: Personalization tool for Yubikey OTP tokens
- Yubikeys are USB tokens that act like keyboards and generate one-time
+Description: Development files for the YubiKey OTP personalization library
+ YubiKeys are USB tokens that act like keyboards and generate one-time
  or static passwords.
  .
  This package contains the development files for the library.
