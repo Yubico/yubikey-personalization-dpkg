@@ -18,6 +18,10 @@ Example initial checkout:
 
 $ git clone git@git.err.no:yubikey-personalization yubikey-personalization-dpkg
 $ cd yubikey-personalization-dpkg
+$ git config gitpkg.deb-export-hook /usr/share/gitpkg/hooks/quilt-patches-deb-export-hook
+$ git config gitpkg.pre-export-hook /usr/share/gitpkg/hooks/pristine-tar-pre-export-hook
+$ git config gitpkg.create-fake-orig false
+$ git config gitpkg.force-overwrite-orig false
 
 To merge in a new upstream version do:
 
