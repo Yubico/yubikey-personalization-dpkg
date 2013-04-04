@@ -11,4 +11,5 @@ override_dh_install:
 	dh_install --fail-missing
 
 override_dh_auto_configure:
-	dh_auto_configure -- --with-udevrulesdir=/lib/udev/rules.d
+	dh_auto_configure -- --with-udevrulesdir=/lib/udev/rules.d \
+		--disable-silent-rules
