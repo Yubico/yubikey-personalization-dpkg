@@ -1,6 +1,7 @@
 yubikey-personalization (1.12.0-3) experimental; urgency=low
 
   * Disable silent rules (W-compiler-flags-hidden).
+  * Use machine readable copyright file.
 
  -- Simon Josefsson <simon@yubico.com>  Thu, 04 Apr 2013 12:13:40 +0200
 
