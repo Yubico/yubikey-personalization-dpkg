@@ -19,7 +19,6 @@ Description: Personalization tool for Yubikey OTP tokens
  .
  This is a tool to customize the tokens with your own cryptographic
  key, user id and so on.
-Homepage: http://code.google.com/p/yubikey-personalization/
 
 Package: libykpers-1-1
 Architecture: any
@@ -33,7 +32,6 @@ Description: Personalization tool for Yubikey OTP tokens
  .
  This package contains the run-time shared library needed for the
  personalization tool.
-Homepage: http://code.google.com/p/yubikey-personalization/
 
 Package: libykpers-1-dev
 Architecture: any
@@ -44,4 +42,3 @@ Description: Personalization tool for Yubikey OTP tokens
  or static passwords.
  .
  This package contains the development files for the library.
-Homepage: http://code.google.com/p/yubikey-personalization/

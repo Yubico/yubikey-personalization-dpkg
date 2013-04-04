@@ -1,6 +1,8 @@
 yubikey-personalization (1.12.0-2) experimental; urgency=low
 
   * Fix .symbols file for 1.7 release.
+  * Drop duplicate Homepage: fields in control file (lintian
+    binary-control-field-duplicates-source).
 
  -- Simon Josefsson <simon@josefsson.org>  Thu, 04 Apr 2013 09:11:36 +0200
 
