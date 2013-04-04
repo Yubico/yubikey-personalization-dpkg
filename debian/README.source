@@ -36,8 +36,8 @@ $ git tag -s yubikey-personalization_$debversion
 
 Preserve the upstream tarball:
 
-$ cp ../path/to/ykpers-1.12.0.tar.gz yubikey-personalization_1.12.0.orig.tar.gz
-$ pristine-tar commit yubikey-personalization_1.12.0.orig.tar.gz master
+$ cp ../path/to/ykpers-X.Y.Z.tar.gz yubikey-personalization_X.Y.Z.orig.tar.gz
+$ pristine-tar commit yubikey-personalization_X.Y.Z.orig.tar.gz master
 
 To build the package you first initialize cowbuilder, for example:
 
@@ -49,8 +49,6 @@ $ sudo cowbuilder --update --basepath /var/cache/pbuilder/base-debian-sid.cow
 
 Build the package:
 
-$ pristine-tar checkout yubikey-personalization_1.12.0.orig.tar.gz
-$ cp yubikey-personalization_1.12.0.orig.tar.gz ../deb-packages/yubikey-personalization/
 $ gitpkg HEAD
 $ cd ../deb-packages/yubikey-personalization/yubikey-personalization-$VER/
 $ pdebuild --auto-debsign --pbuilder cowbuilder -- --basepath /var/cache/pbuilder/base-debian-sid.cow
