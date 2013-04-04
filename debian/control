@@ -2,7 +2,7 @@ Source: yubikey-personalization
 Section: utils
 Priority: extra
 Maintainer: Tollef Fog Heen <tfheen@debian.org>
-Uploaders: Fredrik Thulin <fredrik@yubico.com>, Simon Josefsson <simon@yubico.com>
+Uploaders: Simon Josefsson <simon@yubico.com>, Klas Lindfors <klas@yubico.com>, Dain Nilsson <dain@yubico.com>
 DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 9), autotools-dev, libusb-1.0-0-dev, libyubikey-dev(>= 1.5), chrpath, pkg-config, dh-autoreconf
 Standards-Version: 3.9.4
