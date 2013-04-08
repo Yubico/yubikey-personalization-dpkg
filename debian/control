@@ -24,6 +24,8 @@ Architecture: any
 Section: libs
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: yubikey-personalization (<< 1.12.0-4)
+Breaks: yubikey-personalization (<< 1.12.0-4)
 Multi-Arch: same
 Description: Library for personalization of YubiKey OTP tokens
  YubiKeys are USB tokens that act like keyboards and generate one-time
