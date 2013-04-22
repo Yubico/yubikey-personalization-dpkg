@@ -3,7 +3,7 @@ Section: utils
 Priority: extra
 Maintainer: Tollef Fog Heen <tfheen@debian.org>
 Uploaders: Simon Josefsson <simon@yubico.com>, Klas Lindfors <klas@yubico.com>, Dain Nilsson <dain@yubico.com>
-Build-Depends: debhelper (>= 9), autotools-dev, libusb-1.0-0-dev | libusb-dev, libyubikey-dev(>= 1.5), chrpath, pkg-config, dh-autoreconf
+Build-Depends: debhelper (>= 9), autotools-dev, libusb-1.0-0-dev | libusb-dev, libyubikey-dev(>= 1.5), libjson0-dev, chrpath, pkg-config, dh-autoreconf
 Standards-Version: 3.9.4
 Homepage: http://code.google.com/p/yubikey-personalization/
 Vcs-Git: git://git.err.no/yubikey-personalization/

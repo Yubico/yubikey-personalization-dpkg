@@ -1,3 +1,10 @@
+yubikey-personalization (1.13.0-1) unstable; urgency=low
+
+  * New upstream version.
+  * Depend on libjson0-dev for new YCFG functionality.
+
+ -- Simon Josefsson <simon@yubico.com>  Mon, 22 Apr 2013 13:50:12 +0200
+
 yubikey-personalization (1.12.0-5) unstable; urgency=low
 
   * Build-depend on either libusb1 or libusb,
