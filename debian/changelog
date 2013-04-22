@@ -2,6 +2,8 @@ yubikey-personalization (1.13.0-1) unstable; urgency=low
 
   * New upstream version.
   * Depend on libjson0-dev for new YCFG functionality.
+  * Updated symbols file.
+  * Update debian/source/options for files not in tarball.
 
  -- Simon Josefsson <simon@yubico.com>  Mon, 22 Apr 2013 13:50:12 +0200
 

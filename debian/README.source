@@ -51,7 +51,7 @@ Build the package:
 
 $ gitpkg HEAD
 $ cd ../deb-packages/yubikey-personalization/yubikey-personalization-$VER/
-$ pdebuild --auto-debsign --pbuilder cowbuilder -- --basepath /var/cache/pbuilder/base-debian-sid.cow
+$ pdebuild --auto-debsign --pbuilder cowbuilder -- --twice --basepath /var/cache/pbuilder/base-debian-sid.cow
 
 If all goes well, you should have newly built packages in
 /var/cache/pbuilder/result/.

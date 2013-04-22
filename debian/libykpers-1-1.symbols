@@ -111,3 +111,6 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykpers_check_version@LIBYKPERS_1.11 1.12.0
  LIBYKPERS_1.12@LIBYKPERS_1.12 1.12.0
  ykp_set_extflag_LED_INV@LIBYKPERS_1.12 1.12.0
+ LIBYKPERS_1.13@LIBYKPERS_1.13 1.13.0
+ ykp_export_config@LIBYKPERS_1.13 1.13.0
+ ykp_import_config@LIBYKPERS_1.13 1.13.0
