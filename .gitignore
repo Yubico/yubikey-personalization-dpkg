@@ -48,6 +48,8 @@ tests/test_yk_utilities
 tests/test_yk_utilities.o
 tests/test_ykpbkdf2
 tests/test_ykpbkdf2.o
+tests/test_json
+tests/test_json.o
 tmp/
 usha.lo
 usha.o
@@ -82,10 +84,16 @@ ykpers-*.tar.gz
 ykpers-*.tar.gz.sig
 ykpers-1.pc
 ykpers-args.o
+ykpers-json.lo
+ykpers-json.o
+ykpers-nojson.lo
+ykpers-nojson.o
 ykpers-version.h
 ykpers-version.lo
 ykpers-version.o
 ykpers.lo
 ykpers.o
+ykpers_lcl.lo
+ykpers_lcl.o
 ykpersonalize
 ykpersonalize.o

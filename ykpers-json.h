@@ -1,7 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Written by Richard Levitte <richar@levitte.org>
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2013 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,24 +28,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef	__YKCORE_BACKEND_H_INCLUDED__
-#define	__YKCORE_BACKEND_H_INCLUDED__
+#ifndef __YKPERS_JSON_H_INCLUDED__
+#define __YKPERS_JSON_H_INCLUDED__
 
-#define	FEATURE_RPT_SIZE		8
+#include <ykpers.h>
 
-#define	REPORT_TYPE_FEATURE		0x03
+# ifdef __cplusplus
+extern "C" {
+# endif
 
-int _ykusb_start(void);
-int _ykusb_stop(void);
+int _ykp_json_export_cfg(const YKP_CONFIG *cfg, char *json, size_t len);
+int _ykp_json_import_cfg(YKP_CONFIG *cfg, const char *json, size_t len);
 
-void * _ykusb_open_device(int vendor_id, int *product_ids, size_t pids_len);
-int _ykusb_close_device(void *);
+# ifdef __cplusplus
+}
+# endif
 
-int _ykusb_read(void *dev, int report_type, int report_number,
-		char *buffer, int buffer_size);
-int _ykusb_write(void *dev, int report_type, int report_number,
-		 char *buffer, int buffer_size);
-
-const char *_ykusb_strerror(void);
-
-#endif	/* __YKCORE_BACKEND_H_INCLUDED__ */
+#endif  /* __YKPERS_JSON_H_INCLUDED__ */

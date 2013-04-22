@@ -29,31 +29,14 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <assert.h>
+#include <string.h>
 
-#include <ykstatus.h>
-#include <ykcore.h>
+#include "ykpers_lcl.h"
+#include <ykpers.h>
 #include <ykdef.h>
 
-struct {
-	int major;
-	int minor;
-	int build;
-} supported[] = {
-	{0,9,9},
-	{1,2,9},
-	{1,3,1},
-	{2,0,2},
-	{2,1,1},
-	{2,2,3},
-	{2,3,0},
-	{3,0,1},
-};
-
-static YK_STATUS * _test_init_st(int major, int minor, int build)
-{
+YK_STATUS *init_status(int major, int minor, int build) {
 	YK_STATUS *st = ykds_alloc();
 	struct status_st *t;
 
@@ -67,22 +50,36 @@ static YK_STATUS * _test_init_st(int major, int minor, int build)
 	return st;
 }
 
-static void _test_yk_firmware(void)
-{
-	size_t i;
-	for(i = 0; i < sizeof(supported) / (sizeof(int) * 3); i++) {
-		int rc;
-		YK_STATUS *st = _test_init_st(supported[i].major, supported[i].minor, supported[i].build);
-		printf("testing: %d.%d.%d\n", supported[i].major, supported[i].minor, supported[i].build);
-		rc = yk_check_firmware_version2(st);
-		assert(rc == 1);
-		ykds_free(st);
-	}
+void _test_ykp_export_ycfg_empty(void) {
+	YKP_CONFIG *cfg = ykp_alloc();
+	char out[1024] = {0};
+	int res = ykp_export_config(cfg, out, 1024, YKP_FORMAT_YCFG);
+	assert(res > 0);
+	ykp_free_config(cfg);
 }
+
+void _test_ykp_import_ycfg_simple(void) {
+	YK_STATUS *st = init_status(2,2,3);
+	YKP_CONFIG *cfg = ykp_alloc();
+	YK_CONFIG ycfg;
+	ykp_configure_version(cfg, st);
+	char data[1024] = "{ \"yubiProdConfig\": { \"mode\": \"oathHOTP\", \"options\": { \"fixedModhex\": false, \"oathDigits\": 6, \"fixedSeedvalue\": 0, \"randomSeed\": false, \"tabFirst\": false, \"tabBetween\": false, \"tabLast\": false, \"appendDelay1\": false, \"appendDelay2\": false, \"appendCR\": true, \"protectSecond\": false, \"sendRef\": false, \"ticketFirst\": false, \"pacing10MS\": false, \"pacing20MS\": false, \"allowHidtrig\": false, \"serialBtnVisible\": true, \"serialUsbVisible\": false, \"serialApiVisible\": true, \"useNumericKeypad\": false, \"fastTrig\": false, \"allowUpdate\": false, \"dormant\": false, \"ledInverted\": false } } }";
+	int res = ykp_import_config(cfg, data, strlen(data), YKP_FORMAT_YCFG);
+	assert(res == 1);
+
+	ycfg = cfg->ykcore_config;
+	assert((ycfg.tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP);
+	assert((ycfg.tktFlags & TKTFLAG_APPEND_CR) == TKTFLAG_APPEND_CR);
+
+	ykp_free_config(cfg);
+	ykds_free(st);
+}
+
 
 int main(void)
 {
-	_test_yk_firmware();
+	_test_ykp_export_ycfg_empty();
+	_test_ykp_import_ycfg_simple();
 
 	return 0;
 }

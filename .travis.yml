@@ -4,12 +4,19 @@ compiler:
   - clang
 env:
   - LIBUSB=libusb EXTRA=libusb-dev
+  - LIBUSB=libusb EXTRA="libusb-dev libjson0-dev"
   - LIBUSB=libusb-1.0 EXTRA=libusb-1.0-0-dev
+  - LIBUSB=libusb-1.0 EXTRA="libusb-1.0-0-dev libjson0-dev"
 script:
   - ./build-and-test.sh
 before_install:
-  - sudo apt-get update; sudo apt-get install -qq libyubikey-dev $EXTRA
+  - sudo apt-get update -qq
+  - sudo apt-get remove -qq -y $REMOVE
+  - sudo apt-get autoremove -qq
+  - sudo apt-get install -qq -y libyubikey-dev $EXTRA
 matrix:
   include:
     - compiler: gcc
-      env: LIBUSB=windows EXTRA=wine
+      env: LIBUSB=windows EXTRA="wine mingw-w64" REMOVE=mingw32 ARCH=32
+    - compiler: gcc
+      env: LIBUSB=windows EXTRA="wine mingw-w64" REMOVE=mingw32 ARCH=64

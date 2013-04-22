@@ -1,6 +1,7 @@
-# Written by Simon Josefsson <simon@josefsson.org>.
-# Copyright (c) 2010-2013 Yubico AB
+# Copyright (c) 2013 Yubico AB
 # All rights reserved.
+#
+# Base copied from ykpers4win.mk
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -31,7 +32,7 @@ LIBJSONVERSION=0.11
 PROJECT=yubikey-personalization
 PACKAGE=ykpers
 
-all: usage ykpers4win32 ykpers4win64
+all: usage ykpers4mac
 
 .PHONY: usage
 usage:
@@ -43,55 +44,57 @@ usage:
 		exit 1; \
 	fi
 
-ykpers4win:
+ykpers4mac:
 	rm -rf tmp && mkdir tmp && cd tmp && \
 	mkdir -p root/licenses && \
 	cp ../json-c-$(LIBJSONVERSION) . \
 		||	wget --no-check-certificate https://s3.amazonaws.com/json-c_releases/releases/json-c-$(LIBJSONVERSION).tar.gz && \
-	tar xfa json-c-$(LIBJSONVERSION).tar.gz && \
+	tar xfz json-c-$(LIBJSONVERSION).tar.gz && \
 	cd json-c-$(LIBJSONVERSION) && \
-	ac_cv_func_realloc_0_nonnull=yes ac_cv_func_malloc_0_nonnull=yes ./configure --host=$(HOST) --build=x86_64-unknown-linux-gnu --prefix=$(PWD)/tmp/root && \
-	make install && \
+	./configure --prefix=$(PWD)/tmp/root && \
+	make install $(CHECK) && \
+	install_name_tool -id @executable_path/../lib/libjson-c.2.dylib $(PWD)/tmp/root/lib/libjson-c.2.dylib && \
+	install_name_tool -id @executable_path/../lib/libjson-c.2.dylib $(PWD)/tmp/root/lib/libjson-c.dylib && \
+	install_name_tool -id @executable_path/../lib/libjson.0.dylib $(PWD)/tmp/root/lib/libjson.0.dylib && \
+	install_name_tool -id @executable_path/../lib/libjson.0.dylib $(PWD)/tmp/root/lib/libjson.dylib && \
+	install_name_tool -change $(PWD)/tmp/root/lib/libjson-c.2.dylib @executable_path/../lib/libjson-c.2 $(PWD)/tmp/root/lib/libjson.0.dylib && \
+	install_name_tool -change $(PWD)/tmp/root/lib/libjson-c.2.dylib @executable_path/../lib/libjson-c.2 $(PWD)/tmp/root/lib/libjson.dylib && \
 	cp COPYING $(PWD)/tmp/root/licenses/json-c.txt && \
 	cd .. && \
 	cp ../libyubikey-$(LIBYUBIKEYVERSION).tar.gz . \
-		||	wget http://yubico.github.io/yubico-c/releases/libyubikey-$(LIBYUBIKEYVERSION).tar.gz && \
-	tar xfa libyubikey-$(LIBYUBIKEYVERSION).tar.gz && \
+		|| 	wget http://yubico-c.googlecode.com/files/libyubikey-$(LIBYUBIKEYVERSION).tar.gz && \
+	tar xfz libyubikey-$(LIBYUBIKEYVERSION).tar.gz && \
 	cd libyubikey-$(LIBYUBIKEYVERSION) && \
-	./configure --host=$(HOST) --build=x86_64-unknown-linux-gnu --prefix=$(PWD)/tmp/root && \
+	./configure --prefix=$(PWD)/tmp/root && \
 	make install $(CHECK) && \
+	install_name_tool -id @executable_path/../lib/libyubikey.0.dylib $(PWD)/tmp/root/lib/libyubikey.dylib && \
+	install_name_tool -id @executable_path/../lib/libyubikey.0.dylib $(PWD)/tmp/root/lib/libyubikey.0.dylib && \
 	cp COPYING $(PWD)/tmp/root/licenses/libyubikey.txt && \
 	cd .. && \
 	cp ../ykpers-$(VERSION).tar.gz . \
 		|| wget http://yubikey-personalization.googlecode.com/files/ykpers-$(VERSION).tar.gz && \
-	tar xfa ykpers-$(VERSION).tar.gz && \
+	tar xfz ykpers-$(VERSION).tar.gz && \
 	cd ykpers-$(VERSION)/ && \
-	PKG_CONFIG_PATH=$(PWD)/tmp/root/lib/pkgconfig lt_cv_deplibs_check_method=pass_all ./configure --host=$(HOST) --build=x86_64-unknown-linux-gnu --prefix=$(PWD)/tmp/root LDFLAGS=-L$(PWD)/tmp/root/lib CPPFLAGS=-I$(PWD)/tmp/root/include && \
+	PKG_CONFIG_PATH=$(PWD)/tmp/root/lib/pkgconfig ./configure --prefix=$(PWD)/tmp/root --with-libyubikey-prefix=$(PWD)/tmp/root && \
 	make install $(CHECK) && \
+	install_name_tool -id @executable_path/../lib/libykpers-1.1.dylib $(PWD)/tmp/root/lib/libykpers-1.dylib && \
+	install_name_tool -id @executable_path/../lib/libykpers-1.1.dylib $(PWD)/tmp/root/lib/libykpers-1.1.dylib && \
+	for executable in $(PWD)/tmp/root/bin/*; do \
+	install_name_tool -change $(PWD)/tmp/root/lib/libyubikey.0.dylib @executable_path/../lib/libyubikey.0.dylib $$executable && \
+	install_name_tool -change $(PWD)/tmp/root/lib/libykpers-1.1.dylib @executable_path/../lib/libykpers-1.1.dylib $$executable ; \
+	done && \
 	cp COPYING $(PWD)/tmp/root/licenses/yubikey-personalization.txt && \
 	cd .. && \
 	cd root && \
-	zip -r ../../ykpers-$(VERSION)-win$(ARCH).zip *
+	zip -r ../../ykpers-$(VERSION)-mac.zip *
 
-ykpers4win32:
-	$(MAKE) -f ykpers4win.mk ykpers4win ARCH=32 HOST=i686-w64-mingw32 CHECK=check
-
-ykpers4win64:
-	$(MAKE) -f ykpers4win.mk ykpers4win ARCH=64 HOST=x86_64-w64-mingw32 CHECK=check
-
-upload-ykpers4win:
+upload-ykpers4mac:
 	@if test ! -d $(YUBICO_GITHUB_REPO); then \
 		echo "yubico.github.com repo not found!"; \
 		echo "Make sure that YUBICO_GITHUB_REPO is set"; \
 		exit 1; \
 	fi
 	gpg --detach-sign --default-key $(PGPKEYID) \
-		$(PACKAGE)-$(VERSION)-win$(BITS).zip
-	gpg --verify $(PACKAGE)-$(VERSION)-win$(BITS).zip.sig
+		$(PACKAGE)-$(VERSION)-mac.zip
+	gpg --verify $(PACKAGE)-$(VERSION)-mac.zip.sig
 	$(YUBICO_GITHUB_REPO)/publish $(PROJECT) $(VERSION) $(PACKAGE)-$(VERSION)-mac.zip*
-
-upload-ykpers4win32:
-	$(MAKE) -f ykpers4win.mk upload-ykpers4win BITS=32
-
-upload-ykpers4win64:
-	$(MAKE) -f ykpers4win.mk upload-ykpers4win BITS=64
