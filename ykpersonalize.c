@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2008-2013 Yubico AB
  * Copyright (c) 2010 Tollef Fog Heen <tfheen@err.no>
  * All rights reserved.
  *
@@ -41,19 +41,11 @@
 
 #include "ykpers-args.h"
 
-static int reader(char *buf, size_t count, void *stream)
-{
-	return (int)fread(buf, 1, count, (FILE *)stream);
-}
-static int writer(const char *buf, size_t count, void *stream)
-{
-	return (int)fwrite(buf, 1, count, (FILE *)stream);
-}
-
 int main(int argc, char **argv)
 {
 	FILE *inf = NULL; const char *infname = NULL;
 	FILE *outf = NULL; const char *outfname = NULL;
+	int data_format = YKP_FORMAT_LEGACY;
 	bool verbose = false;
 	bool aesviahash = false;
 	bool use_access_code = false;
@@ -63,6 +55,7 @@ int main(int argc, char **argv)
 	YKP_CONFIG *cfg = ykp_alloc();
 	YK_STATUS *st = ykds_alloc();
 	bool autocommit = false;
+	char data[1024];
 
 	/* Options */
 	char *salt = NULL;
@@ -126,6 +119,7 @@ int main(int argc, char **argv)
 	/* Parse all arguments in a testable way */
 	if (! args_to_config(argc, argv, cfg, yk,
 			     &infname, &outfname,
+			     &data_format,
 			     &autocommit, salt,
 			     st, &verbose,
 			     access_code, &use_access_code,
@@ -181,13 +175,20 @@ int main(int argc, char **argv)
 	}
 
 	if (inf) {
-		if (!ykp_read_config(cfg, reader, inf))
+		if(!fread(data, 1, 1024, inf))
+			goto err;
+		if (!ykp_import_config(cfg, data, strlen(data), data_format))
 			goto err;
 	} else if (! aesviahash && ! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
 		char passphrasebuf[256]; size_t passphraselen;
 		fprintf(stderr, "Passphrase to create AES key: ");
 		fflush(stderr);
-		fgets(passphrasebuf, sizeof(passphrasebuf), stdin);
+		if (!fgets(passphrasebuf, sizeof(passphrasebuf), stdin))
+		{
+			perror ("fgets");
+			exit_code = 1;
+			goto err;
+		}
 		passphraselen = strlen(passphrasebuf);
 		if (passphrasebuf[passphraselen - 1] == '\n')
 			passphrasebuf[passphraselen - 1] = '\0';
@@ -197,8 +198,12 @@ int main(int argc, char **argv)
 	}
 
 	if (outf) {
-		if (!ykp_write_config(cfg, writer, outf))
+		if(!(ykp_export_config(cfg, data, 1024, data_format))) {
 			goto err;
+		}
+		if(!(fwrite(data, 1, strlen(data), outf))) {
+			goto err;
+		}
 	} else {
 		char commitbuf[256]; size_t commitlen;
 
@@ -218,14 +223,19 @@ int main(int argc, char **argv)
 			} else {
 				fprintf(stderr, "Configuration data to be updated in key configuration %d:\n\n", ykp_command(cfg) == SLOT_UPDATE1 ? 1 : 2);
 			}
-			ykp_write_config(cfg, writer, stderr);
+			ykp_export_config(cfg, data, 1024, YKP_FORMAT_LEGACY);
+			fwrite(data, 1, strlen(data), stderr);
 		}
 		fprintf(stderr, "\nCommit? (y/n) [n]: ");
 		if (autocommit) {
 			strcpy(commitbuf, "yes");
 			puts(commitbuf);
 		} else {
-			fgets(commitbuf, sizeof(commitbuf), stdin);
+			if (!fgets(commitbuf, sizeof(commitbuf), stdin))
+			{
+				perror ("fgets");
+				goto err;
+			}
 		}
 		commitlen = strlen(commitbuf);
 		if (commitbuf[commitlen - 1] == '\n')

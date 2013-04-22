@@ -35,6 +35,8 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(srcdir)/ykcore -I$(srcdir)/rfc4634
 AM_CFLAGS = $(WARN_CFLAGS)
 
+AM_CFLAGS += $(libjson_CFLAGS)
+
 # The library.
 
 ykpers_includedir=$(includedir)/ykpers-1
@@ -44,11 +46,17 @@ ykpers_include_HEADERS += ykpbkdf2.h
 
 lib_LTLIBRARIES = libykpers-1.la
 libykpers_1_la_SOURCES = ykpers.c ykpers-version.c ykpbkdf2.c
+if JSON
+libykpers_1_la_SOURCES += ykpers-json.c
+else
+libykpers_1_la_SOURCES += ykpers-nojson.c
+endif
+libykpers_1_la_SOURCES += ykpers_lcl.h ykpers-json.h ykpers_lcl.c
 libykpers_1_la_SOURCES += rfc4634/hmac.c rfc4634/usha.c rfc4634/sha.h	\
 	rfc4634/sha1.c rfc4634/sha224-256.c rfc4634/sha384-512.c	\
 	rfc4634/sha-private.h
 libykpers_1_la_SOURCES += ykpers-1.pc.in libykpers-1.map
-libykpers_1_la_LIBADD = $(LTLIBYUBIKEY) ./ykcore/libykcore.la
+libykpers_1_la_LIBADD = $(LTLIBYUBIKEY) ./ykcore/libykcore.la $(libjson_LIBS)
 libykpers_1_la_LDFLAGS = -no-undefined \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 EXTRA_libykpers_1_la_DEPENDENCIES = libykpers-1.map
@@ -105,17 +113,23 @@ check-doc-dist:
 	diff -ur $(srcdir)/Makefile.am check-doc-dist.tmp || \
 		(rm -f check-doc-dist.tmp; echo 'error: please update $(srcdir)/Makefile.am to include all docs'; exit 1)
 	rm -f check-doc-dist.tmp
+	! man --warnings ./*.1 2>&1 | grep ': warning'
 
 release:
-	@if test -z "$(USER)" || test -z "$(KEYID)"; then \
+	@if test -z "$(KEYID)"; then \
 		echo "Try this instead:"; \
-		echo "  make release USER=[GOOGLEUSERNAME] KEYID=[PGPKEYID]"; \
+		echo "  make release KEYID=[PGPKEYID]"; \
 		echo "For example:"; \
-		echo "  make release USER=simonyubico@gmail.com KEYID=2117364A"; \
+		echo "  make release KEYID=2117364A"; \
 		exit 1; \
 	fi
 	@head -3 $(srcdir)/NEWS | grep -q "Version $(VERSION) .released `date -I`" || \
 		(echo 'error: You need to update date/version in $(srcdir)/NEWS, see doc/MakeRelease.wiki.'; exit 1)
+	@if test ! -d $(YUBICO_GITHUB_REPO); then \
+		echo "yubico.github.com repo not found!"; \
+		echo "Make sure that YUBICO_GITHUB_REPO is set"; \
+		exit 1; \
+	fi
 	rm -f $(srcdir)/ChangeLog
 	make check-doc-dist ChangeLog distcheck
 	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
@@ -123,11 +137,4 @@ release:
 	cd $(srcdir) && git push
 	cd $(srcdir) && git tag -u $(KEYID)! -m $(VERSION) v$(VERSION)
 	cd $(srcdir) && git push --tags
-	mkdir -p ../releases/$(PACKAGE)/ && \
-		cp -v $(PACKAGE)-$(VERSION).tar.gz* ../releases/$(PACKAGE)/
-	googlecode_upload.py -s "OpenPGP signature for $(PACKAGE) $(VERSION)." \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz.sig \
-	 -l OpSys-All
-	googlecode_upload.py -s "$(PACKAGE) $(VERSION)" \
-	 -p $(PROJECT) -u $(USER) $(PACKAGE)-$(VERSION).tar.gz \
-	 -l OpSys-All,Type-Source
+	$(YUBICO_GITHUB_REPO)/publish $(PROJECT) $(VERSION) $(PACKAGE)-$(VERSION).tar.gz*

@@ -1,5 +1,5 @@
 # Written by Richard Levitte <richard@levitte.org>.
-# Copyright (c) 2008-2012 Yubico AB
+# Copyright (c) 2008-2013 Yubico AB
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.12.0],
+AC_INIT([yubikey-personalization], [1.13.0],
   [yubico-devel@googlegroups.com], [ykpers],
   [http://code.google.com/p/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,9 +36,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 13)
+AC_SUBST(LT_CURRENT, 14)
 AC_SUBST(LT_REVISION, 0)
-AC_SUBST(LT_AGE, 12)
+AC_SUBST(LT_AGE, 13)
 
 AM_INIT_AUTOMAKE([1.11.3 -Wall -Werror])
 AM_SILENT_RULES([yes])
@@ -125,6 +125,26 @@ AM_CONDITIONAL([BACKEND_LIBUSB_1_0], test x$with_backend = xlibusb-1.0)
 AM_CONDITIONAL([BACKEND_OSX], test x$with_backend = xosx)
 AM_CONDITIONAL([BACKEND_WINDOWS], test x$with_backend = xwindows)
 
+AC_ARG_WITH([json],
+            AC_HELP_STRING([--without-json], [without JSON YCFG support]),
+            [with_json=$withval], [with_json=yes])
+if test x$with_json = xyes; then
+  PKG_CHECK_MODULES([libjson], [json-c], [], [
+    PKG_CHECK_MODULES([libjson], [json], [], [with_json=no])])
+fi
+AC_MSG_CHECKING([whether to use json library])
+AC_MSG_RESULT([$with_json])
+AM_CONDITIONAL([JSON], [test "$with_json" = yes])
+
+# Check for json_object_to_json_string_ext, needed for pretty printing.
+am_save_CFLAGS="$CFLAGS"
+am_save_LIBS="$LIBS"
+CFLAGS="$CFLAGS $libjson_CFLAGS"
+LIBS="$LIBS $libjson_LIBS"
+AC_CHECK_FUNCS([json_object_to_json_string_ext])
+CFLAGS=$am_save_CFLAGS
+LIBS=$am_save_LIBS
+
 AC_ARG_WITH([udevrulesdir],
   AS_HELP_STRING([--with-udevrulesdir=DIR], [Install udev rules into this directory]),
   [], [])
@@ -191,12 +211,16 @@ AC_OUTPUT
 
 AC_MSG_NOTICE([summary of build options:
 
-  version:          ${VERSION} shared $LT_CURRENT:$LT_REVISION:$LT_AGE major $YKPERS_VERSION_MAJOR minor $YKPERS_VERSION_MINOR patch $YKPERS_VERSION_PATCH number $YKPERS_VERSION_NUMBER
-  Host type:        ${host}
-  Install prefix:   ${prefix}
-  Compiler:         ${CC}
-  Library types:    Shared=${enable_shared}, Static=${enable_static}
-  USB backend:      ${with_backend}
-  udev rules dir:   ${with_udevrulesdir:-N/A}
-  udev rules file:  ${udevrulesfile:-N/A}
+  version:           ${VERSION} shared $LT_CURRENT:$LT_REVISION:$LT_AGE major $YKPERS_VERSION_MAJOR minor $YKPERS_VERSION_MINOR patch $YKPERS_VERSION_PATCH number $YKPERS_VERSION_NUMBER
+  Host type:         ${host}
+  Install prefix:    ${prefix}
+  Compiler:          ${CC}
+  Library types:     Shared=${enable_shared}, Static=${enable_static}
+  USB backend:       ${with_backend}
+  JSON library:      $with_json
+    CFLAGS:          $libjson_CFLAGS
+    LIBS:            $libjson_LIBS
+    pretty printing: $ac_cv_func_json_object_to_json_string_ext
+  udev rules dir:    ${with_udevrulesdir:-N/A}
+  udev rules file:   ${udevrulesfile:-N/A}
 ])

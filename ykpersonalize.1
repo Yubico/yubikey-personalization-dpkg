@@ -36,9 +36,9 @@
 ykpersonalize - personalize YubiKey OTP tokens
 .SH SYNOPSIS
 .B ykpersonalize
-[\fI-1\fR | \fI-2\fR] [\fI-sfile\fR] [\fI-ifile\fR] [\fI-axxx\fR] [\fI-cxxx\fR] [\fI-ooption\fR]
-[\fI-y\fR] [\fI-v\fR] [\fI-h\fR] [\fI-n\fR] [\fI-t\fR] [\fI-u\fR] [\fI-x\fR] [\fI-z\fR] [\fI-m\fR]
-[\fI-S\fR]
+[\fI-1\fR | \fI-2\fR] [\fI-sfile\fR] [\fI-ifile\fR] [\fI-fformat\fR] [\fI-axxx\fR] [\fI-cxxx\fR]
+[\fI-ooption\fR] [\fI-y\fR] [\fI-v\fR] [\fI-h\fR] [\fI-n\fR] [\fI-t\fR] [\fI-u\fR] [\fI-x\fR]
+[\fI-z\fR] [\fI-m\fR] [\fI-S\fR]
 .\".SH DESCRIPTION
 .\" Add any additional description here
 .SH OPTIONS
@@ -69,6 +69,10 @@ save configuration to file instead of key.
 \fB\-i\fIfile\fR
 read configuration from file.
 (if file is -, read from stdin)
+.TP
+\fB\-f\fIformat\fR
+format to be used with \fB-s\fR and \fB-i\fR.
+Valid options are \fBycfg\fR and \fBlegacy\fR.
 .TP
 \fB\-a\fIxxx\fR
 the secret key, 32 char (40 for OATH-HOTP and HMAC challenge-response) hex value (not modhex).
@@ -143,19 +147,30 @@ The scanmap must be sent in the order:
 .br
 the default scanmap in the YubiKey is:
 .br
-\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f9195979899271e1f202122232425269e2b28\fR
+\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f
+.br
+9195979899271e1f202122232425269e2b28\fR
 .br
 an example for simplified us dvorak would be:
 .br
-\fI0c110b071c180d0a0619130f120e09378c918b879c988d8a8699938f928e89b7271e1f202122232425269e2b28\fR
+\fI0c110b071c180d0a0619130f120e09378c918b879c988d8a869993
+.br
+8f928e89b7271e1f202122232425269e2b28\fR
 .br
 or for a french azerty keyboard (digits are shifted):
 .br
-\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f9195979899a79e9fa0a1a2a3a4a5a6382b28\fR
+\fI06050708090a0b0c0d0e0f111517181986858788898a8b8c8d8e8f
+.br
+9195979899a79e9fa0a1a2a3a4a5a6382b28\fR
 .br
 and a turkish example (has a dotless i instead of usual i):
 .br
-\fI06050708090a0b340d0e0f111517181986858788898a8b8c8d8e8f9195979899271e1f202122232425269e2b28\fR
+\fI06050708090a0b340d0e0f111517181986858788898a8b8c8d8e8f
+.br
+9195979899271e1f202122232425269e2b28\fR
+.br
+Note that you must remove any whitespace present in these examples
+before using the values.
 .TP
 \fB-n URI\fR
 Program NFC NDEF URI
@@ -350,7 +365,7 @@ Inverts the behaviour of the led on the YubiKey.
 
 .SH OATH-HOTP Mode
 When using OATH-HOTP mode, a HMAC key of 160 bits (20 bytes, 40 chars of hex)
-can be supplied with -a.
+can be supplied with \fB\-a\fR.
 .PP
 
 .SH Challenge-response Mode
