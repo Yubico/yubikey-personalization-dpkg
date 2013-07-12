@@ -143,6 +143,17 @@ int ykp_free_config(YKP_CONFIG *cfg)
 	return 0;
 }
 
+int ykp_clear_config(YKP_CONFIG *cfg)
+{
+	if(cfg) {
+		cfg->ykcore_config.tktFlags = 0;
+		cfg->ykcore_config.cfgFlags = 0;
+		cfg->ykcore_config.extFlags = 0;
+		return 1;
+	}
+	return 0;
+}
+
 void ykp_configure_version(YKP_CONFIG *cfg, YK_STATUS *st)
 {
 	cfg->yk_major_version = st->versionMajor;
@@ -758,7 +769,19 @@ int ykp_set_tktflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	}							\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
+} \
+bool ykp_get_tktflag_ ## type(YKP_CONFIG *cfg)			\
+{								\
+	if (cfg) {						\
+		if((cfg->ykcore_config.tktFlags & TKTFLAG_ ## type) == TKTFLAG_ ## type)	\
+			return true;				\
+		else						\
+			return false;				\
+	}							\
+	return false;						\
 }
+
+
 
 #define def_set_cfgflag(type,capability)			\
 int ykp_set_cfgflag_ ## type(YKP_CONFIG *cfg, bool state)	\
@@ -776,7 +799,18 @@ int ykp_set_cfgflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	}							\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
+}								\
+bool ykp_get_cfgflag_ ## type(YKP_CONFIG *cfg)			\
+{								\
+	if (cfg) {						\
+		if((cfg->ykcore_config.cfgFlags & CFGFLAG_ ## type) == CFGFLAG_ ## type)	\
+			return true;				\
+		else						\
+			return false;				\
+	}							\
+	return false;						\
 }
+
 
 #define def_set_extflag(type,capability)			\
 int ykp_set_extflag_ ## type(YKP_CONFIG *cfg, bool state)	\
@@ -794,6 +828,16 @@ int ykp_set_extflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	}							\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
+}								\
+bool ykp_get_extflag_ ## type(YKP_CONFIG *cfg)			\
+{								\
+	if (cfg) {						\
+		if((cfg->ykcore_config.extFlags & EXTFLAG_ ## type) == EXTFLAG_ ## type)	\
+			return true;				\
+		else						\
+			return false;				\
+	}							\
+	return false;						\
 }
 
 def_set_tktflag(TAB_FIRST,capability_has_ticket_mods)
@@ -1069,6 +1113,16 @@ int ykp_config_num(YKP_CONFIG *cfg)
 	}
 	ykp_errno = YKP_ENOCFG;
 	return 0;
+}
+
+void ykp_set_acccode_type(YKP_CONFIG *cfg, unsigned int type)
+{
+	cfg->ykp_acccode_type = type;
+}
+
+unsigned int ykp_get_acccode_type(const YKP_CONFIG *cfg)
+{
+	return cfg->ykp_acccode_type;
 }
 
 int * _ykp_errno_location(void)
