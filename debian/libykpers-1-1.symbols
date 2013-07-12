@@ -114,3 +114,42 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  LIBYKPERS_1.13@LIBYKPERS_1.13 1.13.0
  ykp_export_config@LIBYKPERS_1.13 1.13.0
  ykp_import_config@LIBYKPERS_1.13 1.13.0
+ LIBYKPERS_1.14@LIBYKPERS_1.14 1.14.0
+ ykp_clear_config@LIBYKPERS_1.14 1.14.0
+ ykp_get_acccode_type@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_ALLOW_HIDTRIG@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_CHAL_BTN_TRIG@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_CHAL_HMAC@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_CHAL_YUBICO@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_HMAC_LT64@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_MAN_UPDATE@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_OATH_FIXED_MODHEX1@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_OATH_FIXED_MODHEX2@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_OATH_FIXED_MODHEX@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_OATH_HOTP8@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_PACING_10MS@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_PACING_20MS@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_SEND_REF@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_SHORT_TICKET@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_STATIC_TICKET@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_STRONG_PW1@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_STRONG_PW2@LIBYKPERS_1.14 1.14.0
+ ykp_get_cfgflag_TICKET_FIRST@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_ALLOW_UPDATE@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_DORMANT@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_FAST_TRIG@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_LED_INV@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_SERIAL_API_VISIBLE@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_SERIAL_BTN_VISIBLE@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_SERIAL_USB_VISIBLE@LIBYKPERS_1.14 1.14.0
+ ykp_get_extflag_USE_NUMERIC_KEYPAD@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_APPEND_CR@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_APPEND_DELAY1@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_APPEND_DELAY2@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_APPEND_TAB1@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_APPEND_TAB2@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_CHAL_RESP@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_OATH_HOTP@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_PROTECT_CFG2@LIBYKPERS_1.14 1.14.0
+ ykp_get_tktflag_TAB_FIRST@LIBYKPERS_1.14 1.14.0
+ ykp_set_acccode_type@LIBYKPERS_1.14 1.14.0
