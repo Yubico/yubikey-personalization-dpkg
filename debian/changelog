@@ -3,6 +3,8 @@ yubikey-personalization (1.14.0-1) unstable; urgency=low
   * New upstream version.
   * Updated symbols file.
   * Change Homepage to point at github page.
+  * Change libusb build-depend to make sure we never get libusb 0.1
+    on non-hurd.
 
  -- Simon Josefsson <simon@yubico.com>  Fri, 12 Jul 2013 11:36:42 +0200
 
