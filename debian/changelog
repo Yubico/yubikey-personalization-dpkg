@@ -1,3 +1,9 @@
+yubikey-personalization (1.14.0-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Simon Josefsson <simon@yubico.com>  Fri, 12 Jul 2013 11:36:42 +0200
+
 yubikey-personalization (1.13.0-2) unstable; urgency=low
 
   * Update watch file (moved from google code to github).
