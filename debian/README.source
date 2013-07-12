@@ -41,7 +41,7 @@ $ pristine-tar commit yubikey-personalization_X.Y.Z.orig.tar.gz master
 
 To build the package you first initialize cowbuilder, for example:
 
-$ sudo cowbuilder --create --distribution sid --mirror ftp://ftp.se.debian.org/debian/ --debootstrapopts "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg" --basepath /var/cache/pbuilder/base-debian-sid.cow
+$ sudo cowbuilder --create --distribution sid --mirror http://http.debian.net/debian --debootstrapopts "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg" --basepath /var/cache/pbuilder/base-debian-sid.cow
 
 Optionally update cowbuilder:
 
