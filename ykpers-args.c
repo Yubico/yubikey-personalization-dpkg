@@ -40,6 +40,7 @@
 #include <ykpers.h>
 #include <yubikey.h> /* To get yubikey_modhex_encode and yubikey_hex_encode */
 #include <ykdef.h>
+#include <ykpers-version.h>
 #include "ykpers-args.h"
 
 #define YUBICO_OATH_VENDOR_ID_HEX	0xe1	/* UB as hex */
@@ -70,8 +71,8 @@ const char *usage =
 "          char hex value (not modhex)\n"
 "-cXXX..   A 12 char hex value (not modhex) to use as access code for programming\n"
 "          (this does NOT SET the access code, that's done with -oaccess=)\n"
-"-nXXX..   Write NDEF type 2 URI to YubiKey NEO, must be used with -1 or -2\n"
-"-tXXX..   Write NDEF type 2 text to YubiKey NEO, must be used with -1 or -2\n"
+"-nXXX..   Write NDEF URI to YubiKey NEO, must be used with -1 or -2\n"
+"-tXXX..   Write NDEF text to YubiKey NEO, must be used with -1 or -2\n"
 "-mMODE    Set the USB operation mode of the YubiKey NEO.\n"
 "          Possible MODE arguments are:\n"
 "          0                   HID device only.\n"
@@ -154,15 +155,18 @@ const char *usage =
 "\n"
 "-y        always commit (do not prompt)\n"
 "\n"
+"-d        dry-run (don't write anything to key)\n"
+"\n"
 "-v        verbose\n"
+"-V        tool version\n"
 "-h        help (this text)\n"
 ;
-const char *optstring = "u12xza:c:n:t:hi:o:s:f:vym:S::";
+const char *optstring = "u12xza:c:n:t:hi:o:s:f:dvym:S::V";
 
 static int _set_fixed(char *opt, YKP_CONFIG *cfg);
 static int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src);
 static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, uint32_t mui);
-static int _set_oath_id(char *opt, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *yk, YK_STATUS *st);
+static int _set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st);
 
 static int hex_modhex_decode(unsigned char *result, size_t *resultlen,
 			     const char *str, size_t strl,
@@ -230,7 +234,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		   const char **infname, const char **outfname,
 		   int *data_format,
 		   bool *autocommit, char *salt,
-		   YK_STATUS *st, bool *verbose,
+		   YK_STATUS *st, bool *verbose, bool *dry_run,
 		   unsigned char *access_code, bool *use_access_code,
 		   bool *aesviahash, char *ndef_type, char *ndef,
 		   unsigned char *usb_mode, bool *zap,
@@ -247,11 +251,8 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 	bool ndef_seen = false;
 	bool usb_mode_seen = false;
 	bool scan_map_seen = false;
-	struct config_st *ycfg;
 
 	ykp_configure_version(cfg, st);
-
-	ycfg = (struct config_st *) ykp_core_config(cfg);
 
 	while((c = getopt(argc, argv, optstring)) != -1) {
 		if (c == 'o') {
@@ -276,9 +277,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 				 * we reset them here and, as a consequence of that, require the
 				 * mode choosing options to be specified before any other.
 				 */
-				ycfg->tktFlags = 0;
-				ycfg->cfgFlags = 0;
-				ycfg->extFlags = 0;
+				ykp_clear_config(cfg);
 
 				mode_chosen = 1;
 			}
@@ -523,8 +522,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 					return 0;
 				}
 				/* for OATH-HOTP and CHAL-RESP, uid is not applicable */
-				if ((ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP ||
-				    (ycfg->tktFlags & TKTFLAG_CHAL_RESP) == TKTFLAG_CHAL_RESP) {
+				if (ykp_get_tktflag_OATH_HOTP(cfg) || ykp_get_tktflag_CHAL_RESP(cfg)) {
 					fprintf(stderr,
 						"Option uid= not valid with -ooath-hotp or -ochal-resp.\n"
 						);
@@ -608,7 +606,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 			else if (strncmp(optarg, "oath-imf=", 9) == 0) {
 				unsigned long imf;
 
-				if (!(ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP) {
+				if (!ykp_get_tktflag_OATH_HOTP(cfg)) {
 					fprintf(stderr,
 						"Option oath-imf= only valid with -ooath-hotp or -ooath-hotp8.\n"
 						);
@@ -631,7 +629,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 				}
 			}
 			else if (strncmp(optarg, "oath-id=", 8) == 0 || strcmp(optarg, "oath-id") == 0) {
-				if (_set_oath_id(optarg, cfg, ycfg, yk, st) != 1) {
+				if (_set_oath_id(optarg, cfg, yk, st) != 1) {
 					*exit_code = 1;
 					return 0;
 				}
@@ -666,12 +664,19 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 				return 0;
 			}
 			break;
+		case 'd':
+			*dry_run = true;
+			break;
 		case 'v':
 			*verbose = true;
 			break;
 		case 'y':
 			*autocommit = true;
 			break;
+		case 'V':
+			fputs(YKPERS_VERSION_STRING "\n", stderr);
+			*exit_code = 0;
+			return 0;
 		case 'h':
 		default:
 			fputs(usage, stderr);
@@ -710,12 +715,11 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		int res = 0;
 
 		/* for OATH-HOTP, 160 bits key is also valid */
-		if ((ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP)
+		if (ykp_get_tktflag_OATH_HOTP(cfg))
 			long_key_valid = true;
 
 		/* for HMAC (not Yubico) challenge-response, 160 bits key is also valid */
-		if ((ycfg->tktFlags & TKTFLAG_CHAL_RESP) == TKTFLAG_CHAL_RESP &&
-		    (ycfg->cfgFlags & CFGFLAG_CHAL_HMAC) == CFGFLAG_CHAL_HMAC) {
+		if(ykp_get_tktflag_CHAL_RESP(cfg) && ykp_get_cfgflag_CHAL_HMAC(cfg)) {
 			long_key_valid = true;
 		}
 
@@ -792,9 +796,9 @@ static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t
 	return 1;
 }
 
-static int _set_oath_id(char *opt, YKP_CONFIG *cfg, struct config_st *ycfg, YK_KEY *yk, YK_STATUS *st) {
+static int _set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st) {
 	/* For details, see YubiKey Manual 2010-09-16 section 5.3.4 - OATH-HOTP Token Identifier */
-	if (!(ycfg->tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP) {
+	if (!ykp_get_tktflag_OATH_HOTP(cfg)) {
 		fprintf(stderr,
 			"Option oath-id= only valid with -ooath-hotp or -ooath-hotp8.\n"
 			);

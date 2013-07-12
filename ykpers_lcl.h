@@ -45,6 +45,8 @@ struct ykp_config_t {
 	unsigned int command;
 
 	YK_CONFIG ykcore_config;
+
+	unsigned int ykp_acccode_type;
 };
 
 extern bool capability_has_hidtrig(const YKP_CONFIG *cfg);
@@ -70,6 +72,7 @@ struct map_st {
 	const char *json_text;
 	bool (*capability)(const YKP_CONFIG *cfg);
 	unsigned char mode;
+	int (*setter)(YKP_CONFIG *cfg, bool state);
 };
 
 extern struct map_st _ticket_flags_map[];
