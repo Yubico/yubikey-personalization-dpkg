@@ -1,3 +1,9 @@
+yubikey-personalization (1.14.0-2) unstable; urgency=low
+
+  * Loosen udev filename regex.  Closes: #717490.
+
+ -- Simon Josefsson <simon@yubico.com>  Wed, 24 Jul 2013 01:29:28 +0200
+
 yubikey-personalization (1.14.0-1) unstable; urgency=low
 
   * New upstream version.
