@@ -52,9 +52,8 @@ else
 libykpers_1_la_SOURCES += ykpers-nojson.c
 endif
 libykpers_1_la_SOURCES += ykpers_lcl.h ykpers-json.h ykpers_lcl.c
-libykpers_1_la_SOURCES += rfc4634/hmac.c rfc4634/usha.c rfc4634/sha.h	\
-	rfc4634/sha1.c rfc4634/sha224-256.c rfc4634/sha384-512.c	\
-	rfc4634/sha-private.h
+libykpers_1_la_SOURCES += hmac.c usha.c sha.h sha1.c sha224-256.c \
+	sha384-512.c sha-private.h
 libykpers_1_la_SOURCES += ykpers-1.pc.in libykpers-1.map
 libykpers_1_la_LIBADD = $(LTLIBYUBIKEY) ./ykcore/libykcore.la $(libjson_LIBS)
 libykpers_1_la_LDFLAGS = -no-undefined \
@@ -128,7 +127,7 @@ release:
 	fi
 	@head -3 $(srcdir)/NEWS | grep -q "Version $(VERSION) .released `date -I`" || \
 		(echo 'error: You need to update date/version in $(srcdir)/NEWS, see doc/MakeRelease.wiki.'; exit 1)
-	@if test ! -d $(YUBICO_GITHUB_REPO); then \
+	@if test ! -d "$(YUBICO_GITHUB_REPO)"; then \
 		echo "yubico.github.com repo not found!"; \
 		echo "Make sure that YUBICO_GITHUB_REPO is set"; \
 		exit 1; \
