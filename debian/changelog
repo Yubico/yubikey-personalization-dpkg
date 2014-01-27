@@ -2,6 +2,8 @@ yubikey-personalization (1.15.0-1) unstable; urgency=low
 
   * New upstream version.
     - Add new symbols.
+    - Update Standards-Version to 3.9.5.
+    - Update watch file, adding pgpsigurlmangle.
 
  -- Simon Josefsson <simon@yubico.com>  Mon, 27 Jan 2014 12:00:03 +0100
 

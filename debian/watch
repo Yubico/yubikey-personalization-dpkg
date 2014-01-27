@@ -1,2 +1,3 @@
 version=3
-http://yubico.github.io/yubikey-personalization/releases.html .*/ykpers-(\d[\d.]*)\.tar\.gz
+opts=pgpsigurlmangle=s/$/.sig/ \
+  http://opensource.yubico.com/yubikey-personalization/releases.html releases/ykpers-.*\.tar\.gz
