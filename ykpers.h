@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,9 +62,11 @@ int ykp_configure_command(YKP_CONFIG *cfg, uint8_t command);
 int ykp_configure_for(YKP_CONFIG *cfg, int confnum, YK_STATUS *st);
 
 int ykp_AES_key_from_hex(YKP_CONFIG *cfg, const char *hexkey);
+int ykp_AES_key_from_raw(YKP_CONFIG *cfg, const char *key);
 int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 				const char *salt);
 int ykp_HMAC_key_from_hex(YKP_CONFIG *cfg, const char *hexkey);
+int ykp_HMAC_key_from_raw(YKP_CONFIG *cfg, const char *key);
 
 /* Functions for constructing the YK_NDEF struct before writing it to a neo */
 YK_NDEF *ykp_alloc_ndef(void);
@@ -124,43 +126,43 @@ int ykp_set_extflag_ALLOW_UPDATE (YKP_CONFIG *cfg, bool state);
 int ykp_set_extflag_DORMANT (YKP_CONFIG *cfg, bool state);
 int ykp_set_extflag_LED_INV (YKP_CONFIG *cfg, bool state);
 
-bool ykp_get_tktflag_TAB_FIRST(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_APPEND_TAB1(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_APPEND_TAB2(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_APPEND_DELAY1(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_APPEND_DELAY2(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_APPEND_CR(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_PROTECT_CFG2(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_OATH_HOTP(YKP_CONFIG *cfg);
-bool ykp_get_tktflag_CHAL_RESP(YKP_CONFIG *cfg);
+bool ykp_get_tktflag_TAB_FIRST(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_APPEND_TAB1(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_APPEND_TAB2(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_APPEND_DELAY1(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_APPEND_DELAY2(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_APPEND_CR(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_PROTECT_CFG2(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_OATH_HOTP(const YKP_CONFIG *cfg);
+bool ykp_get_tktflag_CHAL_RESP(const YKP_CONFIG *cfg);
 
-bool ykp_get_cfgflag_SEND_REF(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_TICKET_FIRST(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_PACING_10MS(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_PACING_20MS(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_ALLOW_HIDTRIG(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_STATIC_TICKET(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_SHORT_TICKET(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_STRONG_PW1(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_STRONG_PW2(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_MAN_UPDATE(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_OATH_HOTP8(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_OATH_FIXED_MODHEX1(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_OATH_FIXED_MODHEX2(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_OATH_FIXED_MODHEX(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_CHAL_YUBICO(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_CHAL_HMAC(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_HMAC_LT64(YKP_CONFIG *cfg);
-bool ykp_get_cfgflag_CHAL_BTN_TRIG(YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_SEND_REF(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_TICKET_FIRST(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_PACING_10MS(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_PACING_20MS(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_ALLOW_HIDTRIG(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_STATIC_TICKET(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_SHORT_TICKET(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_STRONG_PW1(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_STRONG_PW2(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_MAN_UPDATE(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_OATH_HOTP8(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_OATH_FIXED_MODHEX1(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_OATH_FIXED_MODHEX2(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_OATH_FIXED_MODHEX(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_CHAL_YUBICO(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_CHAL_HMAC(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_HMAC_LT64(const YKP_CONFIG *cfg);
+bool ykp_get_cfgflag_CHAL_BTN_TRIG(const YKP_CONFIG *cfg);
 
-bool ykp_get_extflag_SERIAL_BTN_VISIBLE(YKP_CONFIG *cfg);
-bool ykp_get_extflag_SERIAL_USB_VISIBLE(YKP_CONFIG *cfg);
-bool ykp_get_extflag_SERIAL_API_VISIBLE (YKP_CONFIG *cfg);
-bool ykp_get_extflag_USE_NUMERIC_KEYPAD (YKP_CONFIG *cfg);
-bool ykp_get_extflag_FAST_TRIG (YKP_CONFIG *cfg);
-bool ykp_get_extflag_ALLOW_UPDATE (YKP_CONFIG *cfg);
-bool ykp_get_extflag_DORMANT (YKP_CONFIG *cfg);
-bool ykp_get_extflag_LED_INV (YKP_CONFIG *cfg);
+bool ykp_get_extflag_SERIAL_BTN_VISIBLE(const YKP_CONFIG *cfg);
+bool ykp_get_extflag_SERIAL_USB_VISIBLE(const YKP_CONFIG *cfg);
+bool ykp_get_extflag_SERIAL_API_VISIBLE (const YKP_CONFIG *cfg);
+bool ykp_get_extflag_USE_NUMERIC_KEYPAD (const YKP_CONFIG *cfg);
+bool ykp_get_extflag_FAST_TRIG (const YKP_CONFIG *cfg);
+bool ykp_get_extflag_ALLOW_UPDATE (const YKP_CONFIG *cfg);
+bool ykp_get_extflag_DORMANT (const YKP_CONFIG *cfg);
+bool ykp_get_extflag_LED_INV (const YKP_CONFIG *cfg);
 
 int ykp_clear_config(YKP_CONFIG *cfg);
 
@@ -190,6 +192,8 @@ unsigned int ykp_get_acccode_type(const YKP_CONFIG *cfg);
 #define YKP_ACCCODE_RANDOM	0x02
 #define YKP_ACCCODE_SERIAL	0x03
 
+int ykp_get_supported_key_length(const YKP_CONFIG *cfg);
+
 extern int * _ykp_errno_location(void);
 #define ykp_errno (*_ykp_errno_location())
 const char *ykp_strerror(int errnum);
@@ -200,6 +204,7 @@ const char *ykp_strerror(int errnum);
 #define YKP_EOLDYUBIKEY	0x04
 #define YKP_EINVCONFNUM	0x05
 #define YKP_EINVAL	0x06
+#define YKP_ENORANDOM	0x07
 
 # ifdef __cplusplus
 }

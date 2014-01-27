@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * Copyright (c) 2010 Tollef Fog Heen <tfheen@err.no>
  * All rights reserved.
  *
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	FILE *outf = NULL; const char *outfname = NULL;
 	int data_format = YKP_FORMAT_LEGACY;
 	bool verbose = false;
-	bool aesviahash = false;
+	char keylocation = 0;
 	bool use_access_code = false;
 	unsigned char access_code[256];
 	unsigned char scan_codes[sizeof(SCAN_MAP)];
@@ -59,7 +59,6 @@ int main(int argc, char **argv)
 	bool dry_run = false;
 
 	/* Options */
-	char *salt = NULL;
 	char ndef_string[128] = {0};
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -123,11 +122,10 @@ int main(int argc, char **argv)
 	/* Parse all arguments in a testable way */
 	if (! args_to_config(argc, argv, cfg, yk,
 			     &infname, &outfname,
-			     &data_format,
-			     &autocommit, salt,
+			     &data_format, &autocommit,
 			     st, &verbose, &dry_run,
 			     access_code, &use_access_code,
-			     &aesviahash, &ndef_type, ndef_string,
+			     &keylocation, &ndef_type, ndef_string,
 			     &usb_mode, &zap, scan_codes, &cr_timeout,
 			     &autoeject_timeout, &num_modes_seen, &exit_code)) {
 		goto err;
@@ -186,22 +184,75 @@ int main(int argc, char **argv)
 			goto err;
 		if (!ykp_import_config(cfg, data, strlen(data), data_format))
 			goto err;
-	} else if (! aesviahash && ! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
-		char passphrasebuf[256]; size_t passphraselen;
-		fprintf(stderr, "Passphrase to create AES key: ");
-		fflush(stderr);
-		if (!fgets(passphrasebuf, sizeof(passphrasebuf), stdin))
-		{
-			perror ("fgets");
-			exit_code = 1;
-			goto err;
+	} else if (! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
+		int key_bytes = ykp_get_supported_key_length(cfg);
+		char keybuf[42];
+		size_t keylen;
+		if(keylocation == 2) {
+			if(key_bytes == 20) {
+				fprintf(stderr, " HMAC key, 20 bytes (40 characters hex) : ");
+			} else {
+				fprintf(stderr, " AES key, 16 bytes (32 characters hex) : ");
+			}
+			fflush(stderr);
+			if(!fgets(keybuf, sizeof(keybuf), stdin)) {
+				printf("error?\n");
+				perror ("fgets");
+				exit_code = 1;
+				goto err;
+			}
+			keylen = strnlen(keybuf, sizeof(keybuf));
+			if(keybuf[keylen - 1] == '\n') {
+				keybuf[keylen - 1] = '\0';
+			}
+			if(key_bytes == 20) {
+				if(ykp_HMAC_key_from_hex(cfg, keybuf)) {
+					goto err;
+				}
+			} else {
+				if(ykp_AES_key_from_hex(cfg, keybuf)) {
+					goto err;
+				}
+			}
+		} else if(keylocation == 0) {
+			const char *random_places[] = {
+				"/dev/srandom",
+				"/dev/urandom",
+				"/dev/random",
+				0
+			};
+			const char **random_place;
+			size_t read_bytes = 0;
+
+			for (random_place = random_places; *random_place; random_place++) {
+				FILE *random_file = fopen(*random_place, "r");
+				if (random_file) {
+					read_bytes = 0;
+
+					while (read_bytes < key_bytes) {
+						size_t n = fread(&keybuf[read_bytes], 1,
+								key_bytes - read_bytes, random_file);
+						read_bytes += n;
+					}
+
+					fclose(random_file);
+					break;
+				}
+			}
+			if(read_bytes < key_bytes) {
+				ykp_errno = YKP_ENORANDOM;
+				goto err;
+			}
+			if(key_bytes == 20) {
+				if(ykp_HMAC_key_from_raw(cfg, keybuf)) {
+					goto err;
+				}
+			} else {
+				if(ykp_AES_key_from_raw(cfg, keybuf)) {
+					goto err;
+				}
+			}
 		}
-		passphraselen = strlen(passphrasebuf);
-		if (passphrasebuf[passphraselen - 1] == '\n')
-			passphrasebuf[passphraselen - 1] = '\0';
-		if (!ykp_AES_key_from_passphrase(cfg,
-						 passphrasebuf, salt))
-			goto err;
 	}
 
 	if (outf) {
@@ -334,8 +385,6 @@ err:
 		report_yk_error();
 	}
 
-	if (salt)
-		free(salt);
 	if (st)
 		free(st);
 	if (inf)

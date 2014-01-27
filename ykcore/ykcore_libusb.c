@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -121,7 +121,10 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 	}
 	if (rc >= 0)
 		return rc;
-	yk_errno = YK_EUSBERR;
+	if(rc == 0)
+		yk_errno = YK_ENODATA;
+	else
+		yk_errno = YK_EUSBERR;
 	return 0;
 }
 

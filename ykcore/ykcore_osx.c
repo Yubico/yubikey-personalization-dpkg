@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2012 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * Copyright (c) 2009 Christer Kaivo-oja <christer.kaivooja@gmail.com>
  * All rights reserved.
  *
@@ -184,6 +184,9 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 		yk_errno = YK_EUSBERR;
 		return 0;
 	}
+
+	if(sizecf == 0)
+		yk_errno = YK_ENODATA;
 
 	return (int)sizecf;
 }

@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * Copyright (c) 2009 Tollef Fog Heen <tfheen@err.no>
  * All rights reserved.
  *
@@ -128,9 +128,13 @@ int _ykusb_read(void *dev, int report_type, int report_number,
 		if (ykl_errno > 0 && rc2 < 0)
 			ykl_errno = rc2;
 	}
-	if (ykl_errno > 0)
+	if (ykl_errno > 0) {
 		return ykl_errno;
-	yk_errno = YK_EUSBERR;
+	} else if(ykl_errno == 0) {
+		yk_errno = YK_ENODATA;
+	} else {
+		yk_errno = YK_EUSBERR;
+	}
 	return 0;
 }
 

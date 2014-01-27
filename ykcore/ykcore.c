@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -119,7 +119,8 @@ int yk_check_firmware_version2(YK_STATUS *st)
 		st->versionMinor == 4)) ||
 	      (st->versionMajor == 3 &&
 	       (st->versionMinor == 0 ||
-		st->versionMinor == 1)))) {
+		st->versionMinor == 1 ||
+		st->versionMinor == 2)))) {
 		yk_errno = YK_EFIRMWARE;
 		return 0;
 	}
@@ -402,6 +403,7 @@ static const char *errtext[] = {
 	"operation would block",
 	"invalid command for operation",
 	"expected only one YubiKey but several present",
+	"no data returned from device",
 };
 const char *yk_strerror(int errnum)
 {
