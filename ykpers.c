@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2013 Yubico AB
+ * Copyright (c) 2008-2014 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <ctype.h>
 #include <assert.h>
 
@@ -232,16 +231,15 @@ int ykp_configure_for(YKP_CONFIG *cfg, int confnum, YK_STATUS *st)
 /* Return number of bytes of key data for this configuration.
  * 20 bytes is 160 bits, 16 bytes is 128.
  */
-static int _get_supported_key_length(const YKP_CONFIG *cfg)
+int ykp_get_supported_key_length(const YKP_CONFIG *cfg)
 {
 	/* OATH-HOTP and HMAC-SHA1 challenge response support 20 byte (160 bits)
 	 * keys, holding the last four bytes in the uid field.
 	 */
-	if ((cfg->ykcore_config.tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP)
-		return 20;
-
-	if ((cfg->ykcore_config.tktFlags & TKTFLAG_CHAL_RESP) == TKTFLAG_CHAL_RESP &&
-	    (cfg->ykcore_config.cfgFlags & CFGFLAG_CHAL_HMAC) == CFGFLAG_CHAL_HMAC) {
+	if((ykp_get_tktflag_OATH_HOTP(cfg) &&
+				!ykp_get_cfgflag_CHAL_YUBICO(cfg)) ||
+			(ykp_get_tktflag_CHAL_RESP(cfg) &&
+			 ykp_get_cfgflag_CHAL_HMAC(cfg))) {
 		return 20;
 	}
 
@@ -254,16 +252,40 @@ int ykp_AES_key_from_hex(YKP_CONFIG *cfg, const char *hexkey) {
 
 	/* Make sure that the hexkey is exactly 32 characters */
 	if (strlen(hexkey) != 32) {
+		ykp_errno = YKP_EINVAL;
 		return 1;  /* Bad AES key */
 	}
 
 	/* Make sure that the hexkey is made up of only [0-9a-f] */
-	if (! yubikey_hex_p(hexkey))
+	if (! yubikey_hex_p(hexkey)) {
+		ykp_errno = YKP_EINVAL;
 		return 1;
+	}
 
 	yubikey_hex_decode(aesbin, hexkey, sizeof(aesbin));
 	memcpy(cfg->ykcore_config.key, aesbin, sizeof(cfg->ykcore_config.key));
 
+	return 0;
+}
+
+/* Store a 16 byte AES key.
+ *
+ * copy 16 bytes from key to cfg->ykcore_config.key
+ */
+int ykp_AES_key_from_raw(YKP_CONFIG *cfg, const char *key) {
+	memcpy(cfg->ykcore_config.key, key, sizeof(cfg->ykcore_config.key));
+	return 0;
+}
+
+/* Store a 20 byte HMAC key.
+ *
+ * store the first 16 bytes of key in cfg->ykcore_config.key
+ * and the remaining 4 bytes in cfg->ykcore_config.uid
+ */
+int ykp_HMAC_key_from_raw(YKP_CONFIG *cfg, const char *key) {
+	size_t size = sizeof(cfg->ykcore_config.key);
+	memcpy(cfg->ykcore_config.key, key, size);
+	memcpy(cfg->ykcore_config.uid, key + size, 20 - size);
 	return 0;
 }
 
@@ -278,12 +300,15 @@ int ykp_HMAC_key_from_hex(YKP_CONFIG *cfg, const char *hexkey) {
 
 	/* Make sure that the hexkey is exactly 40 characters */
 	if (strlen(hexkey) != 40) {
+		ykp_errno = YKP_EINVAL;
 		return 1;  /* Bad HMAC key */
 	}
 
 	/* Make sure that the hexkey is made up of only [0-9a-f] */
-	if (! yubikey_hex_p(hexkey))
+	if (! yubikey_hex_p(hexkey)) {
+		ykp_errno = YKP_EINVAL;
 		return 1;
+	}
 
 	yubikey_hex_decode(aesbin, hexkey, sizeof(aesbin));
 	i = sizeof(cfg->ykcore_config.key);
@@ -297,8 +322,7 @@ int ykp_HMAC_key_from_hex(YKP_CONFIG *cfg, const char *hexkey) {
  * key from user entered input.
  *
  * Use user provided salt, or use salt from an available random device.
- * If no random device is available we fall back to using 2048 bits of
- * system time data, together with the user input, as salt.
+ * If no random device is available we return with an error.
  */
 int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 				const char *salt)
@@ -315,7 +339,7 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 		size_t _salt_len = 0;
 		unsigned char buf[sizeof(cfg->ykcore_config.key) + 4];
 		int rc;
-		int key_bytes = _get_supported_key_length(cfg);
+		int key_bytes = ykp_get_supported_key_length(cfg);
 		YK_PRF_METHOD prf_method = {20, yk_hmac_sha1};
 
 		assert (key_bytes <= sizeof(buf));
@@ -349,16 +373,10 @@ int ykp_AES_key_from_passphrase(YKP_CONFIG *cfg, const char *passphrase,
 			}
 		}
 		if (_salt_len == 0) {
-			/* There was no randomness files, so create a cheap
-			   salt from time */
-			time_t t = time(NULL);
-			uint8_t output[256]; /* 2048 bits is a lot! */
-
-			prf_method.prf_fn(passphrase, strlen(passphrase),
-					    (char *)&t, sizeof(t),
-					    output, sizeof(output));
-			memcpy(_salt, output, sizeof(_salt));
-			_salt_len = sizeof(_salt);
+			/* There was no randomness files, so don't do
+			 * anything */
+			ykp_errno = YKP_ENORANDOM;
+			return 0;
 		}
 
 		rc = yk_pbkdf2(passphrase,
@@ -770,7 +788,7 @@ int ykp_set_tktflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
 } \
-bool ykp_get_tktflag_ ## type(YKP_CONFIG *cfg)			\
+bool ykp_get_tktflag_ ## type(const YKP_CONFIG *cfg)		\
 {								\
 	if (cfg) {						\
 		if((cfg->ykcore_config.tktFlags & TKTFLAG_ ## type) == TKTFLAG_ ## type)	\
@@ -800,7 +818,7 @@ int ykp_set_cfgflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
 }								\
-bool ykp_get_cfgflag_ ## type(YKP_CONFIG *cfg)			\
+bool ykp_get_cfgflag_ ## type(const YKP_CONFIG *cfg)		\
 {								\
 	if (cfg) {						\
 		if((cfg->ykcore_config.cfgFlags & CFGFLAG_ ## type) == CFGFLAG_ ## type)	\
@@ -829,7 +847,7 @@ int ykp_set_extflag_ ## type(YKP_CONFIG *cfg, bool state)	\
 	ykp_errno = YKP_ENOCFG;					\
 	return 0;						\
 }								\
-bool ykp_get_extflag_ ## type(YKP_CONFIG *cfg)			\
+bool ykp_get_extflag_ ## type(const YKP_CONFIG *cfg)		\
 {								\
 	if (cfg) {						\
 		if((cfg->ykcore_config.extFlags & EXTFLAG_ ## type) == EXTFLAG_ ## type)	\
@@ -922,7 +940,7 @@ static int _ykp_legacy_export_config(const YKP_CONFIG *cfg, char *buf, size_t le
 		/* for OATH-HOTP and HMAC-SHA1 challenge response, there is four bytes
 		 *  additional key data in the uid field
 		 */
-		key_bits_in_uid = (_get_supported_key_length(cfg) == 20);
+		key_bits_in_uid = (ykp_get_supported_key_length(cfg) == 20);
 
 		/* fixed: or OATH id: */
 		if ((ycfg.tktFlags & TKTFLAG_OATH_HOTP) == TKTFLAG_OATH_HOTP &&
@@ -1156,6 +1174,7 @@ static const char *errtext[] = {
 	"too old yubikey for this operation",
 	"invalid configuration number (this is a programming error)",
 	"invalid option/argument value",
+	"no randomness source available",
 };
 const char *ykp_strerror(int errnum)
 {

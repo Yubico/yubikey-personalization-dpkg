@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2011-2013 Yubico AB
+ * Copyright (c) 2011-2014 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -105,7 +105,7 @@ int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	const char *outfname = NULL;
 	bool verbose = false;
 	bool dry_run = false;
-	bool aesviahash = false;
+	char keylocation;
 	bool use_access_code = false;
 	unsigned char access_code[256];
 	YK_KEY *yk = 0;
@@ -114,7 +114,6 @@ int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	int data_format = YKP_FORMAT_LEGACY;
 
 	/* Options */
-	char *salt = NULL;
 	char ndef[128];
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -142,11 +141,10 @@ int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	/* call args_to_config from ykpers-args.c with a fake set of program arguments */
 	rc = args_to_config(argc, argv, cfg, yk,
 			    &infname, &outfname,
-			    &data_format,
-			    &autocommit, salt,
+			    &data_format, &autocommit,
 			    st, &verbose, &dry_run,
 			    access_code, &use_access_code,
-			    &aesviahash, &ndef_type, ndef, &usb_mode, &zap,
+			    &keylocation, &ndef_type, ndef, &usb_mode, &zap,
 			    scan_map, &cr_timeout, &autoeject_timeout, &num_modes_seen,
 			    &exit_code);
 
@@ -298,7 +296,7 @@ int _test_non_config_args(void)
 	const char *outfname = NULL;
 	bool verbose = false;
 	bool dry_run = false;
-	bool aesviahash = false;
+	char keylocation;
 	bool use_access_code = false;
 	unsigned char access_code[256];
 	YK_KEY *yk = 0;
@@ -308,7 +306,6 @@ int _test_non_config_args(void)
 	int data_format = YKP_FORMAT_LEGACY;
 
 	/* Options */
-	char *salt = NULL;
 	char ndef[128];
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -341,11 +338,10 @@ int _test_non_config_args(void)
 	/* call args_to_config from ykpers-args.c with a fake set of program arguments */
 	rc = args_to_config(argc, argv, cfg, yk,
 			    &infname, &outfname,
-			    &data_format,
-			    &autocommit, salt,
+			    &data_format, &autocommit,
 			    st, &verbose, &dry_run,
 			    access_code, &use_access_code,
-			    &aesviahash, &ndef_type, ndef, &usb_mode, &zap,
+			    &keylocation, &ndef_type, ndef, &usb_mode, &zap,
 			    scan_map, &cr_timeout, &autoeject_timeout, &num_modes_seen,
 			    &exit_code);
 	assert(rc == 1);
