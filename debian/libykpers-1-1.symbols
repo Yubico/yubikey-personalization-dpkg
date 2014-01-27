@@ -153,3 +153,7 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykp_get_tktflag_PROTECT_CFG2@LIBYKPERS_1.14 1.14.0
  ykp_get_tktflag_TAB_FIRST@LIBYKPERS_1.14 1.14.0
  ykp_set_acccode_type@LIBYKPERS_1.14 1.14.0
+ LIBYKPERS_1.15@LIBYKPERS_1.15 1.15.0
+ ykp_AES_key_from_raw@LIBYKPERS_1.15 1.15.0
+ ykp_HMAC_key_from_raw@LIBYKPERS_1.15 1.15.0
+ ykp_get_supported_key_length@LIBYKPERS_1.15 1.15.0

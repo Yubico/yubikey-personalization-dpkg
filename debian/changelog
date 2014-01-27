@@ -1,6 +1,7 @@
 yubikey-personalization (1.15.0-1) unstable; urgency=low
 
   * New upstream version.
+    - Add new symbols.
 
  -- Simon Josefsson <simon@yubico.com>  Mon, 27 Jan 2014 12:00:03 +0100
 
