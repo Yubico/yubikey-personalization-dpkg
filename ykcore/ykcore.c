@@ -41,6 +41,10 @@
 #define Sleep(x) usleep((x)*1000)
 #endif
 
+#ifdef YK_DEBUG
+static void _yk_hexdump(void *, int);
+#endif
+
 /*
  * Yubikey low-level interface section 2.4 (Report arbitration polling) specifies
  * a 600 ms timeout for a Yubikey to process something written to it.
@@ -454,7 +458,7 @@ int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
 {
 	unsigned char data[FEATURE_RPT_SIZE];
 
-	unsigned int sleepval = 10;
+	unsigned int sleepval = 1;
 	unsigned int slept_time = 0;
 	int blocking = 0;
 
@@ -467,6 +471,13 @@ int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
 	slot = 0;
 
 	while (slept_time < max_time_ms) {
+		Sleep(sleepval);
+		slept_time += sleepval;
+		/* exponential backoff, up to 500 ms */
+		sleepval *= 2;
+		if (sleepval > 500)
+			sleepval = 500;
+
 		/* Read a status report from the key */
 		memset(data, 0, sizeof(data));
 		if (!_ykusb_read(yk, REPORT_TYPE_FEATURE, slot, (char *) &data, FEATURE_RPT_SIZE))
@@ -508,13 +519,6 @@ int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
 				break;
 			}
 		}
-
-		Sleep(sleepval);
-		slept_time += sleepval;
-		/* exponential backoff, up to 500 ms */
-		sleepval *= 2;
-		if (sleepval > 500)
-			sleepval = 500;
 	}
 
 	yk_errno = YK_ETIMEOUT;
@@ -713,8 +717,9 @@ uint16_t yk_endian_swap_16(uint16_t x)
 	return x;
 }
 
+#ifdef YK_DEBUG
 /* Private little hexdump function for debugging */
-void _yk_hexdump(void *buffer, int size)
+static void _yk_hexdump(void *buffer, int size)
 {
        unsigned char *p = buffer;
        int i;
@@ -725,3 +730,4 @@ void _yk_hexdump(void *buffer, int size)
       fprintf(stderr, "\n");
       fflush(stderr);
 }
+#endif

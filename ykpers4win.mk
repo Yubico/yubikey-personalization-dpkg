@@ -35,7 +35,7 @@ all: usage ykpers4win32 ykpers4win64
 
 .PHONY: usage
 usage:
-	@if test test -z "$(VERSION)" || test -z "$(PGPKEYID)"; then \
+	@if test -z "$(VERSION)" || test -z "$(PGPKEYID)"; then \
 		echo "Try this instead:"; \
 		echo "  make PGPKEYID=[PGPKEYID] VERSION=[VERSION]"; \
 		echo "For example:"; \
@@ -80,7 +80,7 @@ ykpers4win64:
 	$(MAKE) -f ykpers4win.mk ykpers4win ARCH=64 HOST=x86_64-w64-mingw32 CHECK=check
 
 upload-ykpers4win:
-	@if test ! -d $(YUBICO_GITHUB_REPO); then \
+	@if test ! -d "$(YUBICO_GITHUB_REPO)"; then \
 		echo "yubico.github.com repo not found!"; \
 		echo "Make sure that YUBICO_GITHUB_REPO is set"; \
 		exit 1; \
