@@ -6,7 +6,8 @@
 	dh $@ --parallel --with autoreconf --builddirectory=build
 
 override_dh_install:
-	chrpath -d $(CURDIR)/debian/tmp/usr/bin/ykpersonalize
+	chrpath -d $(CURDIR)/debian/tmp/usr/bin/*
+	chrpath -d $(CURDIR)/debian/tmp/usr/lib/*/libykpers-1.so.*
 	find debian/tmp -name \*.la -delete
 	dh_install --fail-missing
 
