@@ -1,9 +1,3 @@
-yubikey-personalization (1.15.0-2) unstable; urgency=low
-
-  * Fix rpath issue with library.
-
- -- Simon Josefsson <simon@yubico.com>  Mon, 10 Feb 2014 13:27:02 +0100
-
 yubikey-personalization (1.15.0-1) unstable; urgency=low
 
   * New upstream version.
@@ -11,8 +5,9 @@ yubikey-personalization (1.15.0-1) unstable; urgency=low
     - Update Standards-Version to 3.9.5.
     - Update watch file, adding pgpsigurlmangle.
     - Add upstream-signing-key.pgp.
+  * Fix rpath issue with library.
 
- -- Simon Josefsson <simon@yubico.com>  Mon, 27 Jan 2014 12:00:03 +0100
+ -- Simon Josefsson <simon@yubico.com>  Tue, 11 Feb 2014 09:28:37 +0100
 
 yubikey-personalization (1.14.1-1) unstable; urgency=low
 
