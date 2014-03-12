@@ -35,12 +35,12 @@
 #include <ykpers.h>
 #include <ykdef.h>
 
-void _test_128_bits_key(YKP_CONFIG *ykp, struct config_st *cfg)
+static void _test_128_bits_key(YKP_CONFIG *ykp, struct config_st *cfg)
 {
 	unsigned char empty[256];
 
 	memset (empty, 0, sizeof(empty));
-	memset (cfg, 0, sizeof(cfg));
+	memset (cfg, 0, sizeof(struct config_st));
 	cfg->tktFlags = TKTFLAG_APPEND_CR;
 
 	ykp_AES_key_from_passphrase(ykp, "test", "ABCDEF");
@@ -51,12 +51,12 @@ void _test_128_bits_key(YKP_CONFIG *ykp, struct config_st *cfg)
 	assert(memcmp(cfg->uid, empty, sizeof(cfg->uid)) == 0);
 }
 
-void _test_160_bits_key(YKP_CONFIG *ykp, struct config_st *cfg)
+static void _test_160_bits_key(YKP_CONFIG *ykp, struct config_st *cfg)
 {
 	unsigned char empty[256];
 
 	memset (empty, 0, sizeof(empty));
-	memset (cfg, 0, sizeof(cfg));
+	memset (cfg, 0, sizeof(struct config_st));
 	cfg->tktFlags = TKTFLAG_APPEND_CR | TKTFLAG_OATH_HOTP;
 
 	ykp_AES_key_from_passphrase(ykp, "test", "ABCDEF");

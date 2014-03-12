@@ -85,7 +85,7 @@ ykinfo_LDADD = ./libykpers-1.la $(LTLIBYUBIKEY)
 dist_man1_MANS = ykpersonalize.1 ykchalresp.1 ykinfo.1
 
 # Dist docs from wiki.
-EXTRA_DIST = doc/Compatibility.asciidoc doc/Make-Release.asciidoc doc/Read-Me.asciidoc doc/USB-Hid-Issue.asciidoc doc/Windows-Build.asciidoc
+EXTRA_DIST = doc/Compatibility.asciidoc doc/Make-Release.asciidoc doc/USB-Hid-Issue.asciidoc doc/Windows-Build.asciidoc
 
 # Dist contrib stuff.
 EXTRA_DIST += contrib/README contrib/programming.sh contrib/oath-unlock-reprogram.sh contrib/draft-josefsson-yubikey-config.xml
@@ -94,7 +94,7 @@ EXTRA_DIST += contrib/README contrib/programming.sh contrib/oath-unlock-reprogra
 EXTRA_DIST += ykpers4win.mk ykpers4mac.mk
 
 # Dist dev tools as well, to have the tarball complete.
-EXTRA_DIST += build-and-test.sh .travis.yml .gitignore .gitmodules
+EXTRA_DIST += build-and-test.sh .travis.yml .gitignore
 
 # udev rule files
 EXTRA_DIST += 69-yubikey.rules 70-yubikey.rules
@@ -110,7 +110,7 @@ ChangeLog:
 	cd $(srcdir) && git2cl > ChangeLog
 
 check-doc-dist:
-	perl -pe "s,^EXTRA_DIST = .*,EXTRA_DIST = `cd $(srcdir) && ls doc/*.asciidoc | grep -v Todo.ascii | xargs echo`," \
+	perl -pe "s,^EXTRA_DIST = .*,EXTRA_DIST = `cd $(srcdir) && ls doc/*.asciidoc | xargs echo`," \
 		 < $(srcdir)/Makefile.am > check-doc-dist.tmp
 	diff -ur $(srcdir)/Makefile.am check-doc-dist.tmp || \
 		(rm -f check-doc-dist.tmp; echo 'error: please update $(srcdir)/Makefile.am to include all docs'; exit 1)
