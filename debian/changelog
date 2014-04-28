@@ -1,4 +1,4 @@
-yubikey-personalization (1.15.1-2) UNRELEASED; urgency=low
+yubikey-personalization (1.15.1-2) unstable; urgency=low
 
   * Fix watch file.
   * Use libjson-c-dev instead of libjson0-dev.  Closes: #745017.
