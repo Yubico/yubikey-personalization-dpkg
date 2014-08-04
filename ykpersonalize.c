@@ -67,14 +67,12 @@ int main(int argc, char **argv)
 	int num_modes_seen = 0;
 	bool zap = false;
 
-	bool error = false;
+	/* Assume the worst */
+	bool error = true;
 	int exit_code = 0;
 
 	ykp_errno = 0;
 	yk_errno = 0;
-
-	/* Assume the worst */
-	error = true;
 
 	if (!yk_init()) {
 		exit_code = 1;
@@ -184,7 +182,8 @@ int main(int argc, char **argv)
 			goto err;
 		if (!ykp_import_config(cfg, data, strlen(data), data_format))
 			goto err;
-	} else if (! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
+	}
+	if (! zap && (ykp_command(cfg) == SLOT_CONFIG || ykp_command(cfg) == SLOT_CONFIG2)) {
 		int key_bytes = ykp_get_supported_key_length(cfg);
 		char keybuf[42];
 		size_t keylen;
@@ -316,20 +315,32 @@ int main(int argc, char **argv)
 			else if(ykp_command(cfg) == SLOT_NDEF || ykp_command(cfg) == SLOT_NDEF2) {
 				YK_NDEF *ndef = ykp_alloc_ndef();
 				int confnum = 1;
+				int res;
 				if(ndef_type == 'U') {
-					ykp_construct_ndef_uri(ndef, ndef_string);
+					res = ykp_construct_ndef_uri(ndef, ndef_string);
 				} else if(ndef_type == 'T') {
-					ykp_construct_ndef_text(ndef, ndef_string, "en", false);
+					res = ykp_construct_ndef_text(ndef, ndef_string, "en", false);
+				}
+				if(!res) {
+					if(verbose) {
+						printf(" failure to construct ndef\n");
+					}
+					goto err;
 				}
 				if(use_access_code) {
-					ykp_set_ndef_access_code(ndef, access_code);
+					if(!ykp_set_ndef_access_code(ndef, access_code)) {
+						if(verbose) {
+							printf(" failure to set ndef accesscode\n");
+						}
+						goto err;
+					}
 				}
 				if(ykp_command(cfg) == SLOT_NDEF2) {
 					confnum = 2;
 				}
 				if (!yk_write_ndef2(yk, ndef, confnum)) {
 					if (verbose)
-						printf(" failure\n");
+						printf(" failure to write ndef\n");
 					goto err;
 				}
 				ykp_free_ndef(ndef);
