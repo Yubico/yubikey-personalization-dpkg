@@ -1,3 +1,10 @@
+yubikey-personalization (1.15.1-5) unstable; urgency=low
+
+  * Move VC to github.
+  * Fix upstream homepage URL.
+
+ -- Simon Josefsson <simon@josefsson.org>  Mon, 04 Aug 2014 14:52:25 +0200
+
 yubikey-personalization (1.15.1-4) unstable; urgency=low
 
   * Make udev dependency linux-any.  Closes: #749912.
