@@ -1,5 +1,6 @@
-yubikey-personalization (1.15.1-5) unstable; urgency=low
+yubikey-personalization (1.15.2-1) unstable; urgency=low
 
+  * New upstream release.
   * Move VC to github.
   * Fix upstream homepage URL.
 
