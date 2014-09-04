@@ -1,3 +1,11 @@
+yubikey-personalization (1.15.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update copyright file with URL and new copyright years.
+  * Update URL in watch file.
+
+ -- Simon Josefsson <simon@josefsson.org>  Thu, 04 Sep 2014 11:53:59 +0200
+
 yubikey-personalization (1.15.2-1) unstable; urgency=low
 
   * New upstream release.

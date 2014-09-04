@@ -1,11 +1,11 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Yubikey Personalization
-Source: http://code.google.com/p/yubikey-personalization/
+Source: https://developers.yubico.com/yubikey-personalization/
         https://github.com/Yubico/yubikey-personalization
 
 Files: *
 Copyright:
- Copyright (c) 2008-2013 Yubico AB
+ Copyright (c) 2008-2014 Yubico AB
  Copyright (c) 2009-2010 Tollef Fog Heen <tfheen@err.no>
  Copyright (c) 2009 Christer Kaivo-oja <christer.kaivooja@gmail.com>
  Copyright (c) 2010 Simon Josefsson <simon@josefsson.org>
