@@ -26,9 +26,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.15.2],
+AC_INIT([yubikey-personalization], [1.15.3],
   [yubico-devel@googlegroups.com], [ykpers],
-  [http://opensource.yubico.com/yubikey-personalization/])
+  [https://developers.yubico.com/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -37,7 +37,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
 AC_SUBST(LT_CURRENT, 16)
-AC_SUBST(LT_REVISION, 2)
+AC_SUBST(LT_REVISION, 3)
 AC_SUBST(LT_AGE, 15)
 
 AM_INIT_AUTOMAKE([1.11.3 -Wall -Werror])
@@ -62,7 +62,7 @@ AC_LIB_HAVE_LINKFLAGS(yubikey,,
   [#include <yubikey.h>],
   [yubikey_modhex_p("foo")])
 if test "$ac_cv_libyubikey" != yes; then
-  AC_MSG_ERROR([libyubikey v1.5+ not found, see http://opensource.yubico.com/yubico-c/])
+  AC_MSG_ERROR([libyubikey v1.5+ not found, see https://developers.yubico.com/yubico-c/])
 fi
 
 AC_ARG_WITH([backend],
