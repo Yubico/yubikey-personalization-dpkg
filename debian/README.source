@@ -32,7 +32,7 @@ git merge <tag-of-the-new-release>
 git checkout debian
 git merge master
 # update debian/ files and commit as appropriate
-git tag -s yubikey-personalization_$debversion
+git tag -s -m "yubikey-personalization-dpkg X.Y.Z-L" debian/X.Y.Z-L
 
 Preserve the upstream tarball:
 
