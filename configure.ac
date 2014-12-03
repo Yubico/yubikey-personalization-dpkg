@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.16.1],
+AC_INIT([yubikey-personalization], [1.16.2],
   [yubico-devel@googlegroups.com], [ykpers],
   [https://developers.yubico.com/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -37,7 +37,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
 AC_SUBST(LT_CURRENT, 17)
-AC_SUBST(LT_REVISION, 1)
+AC_SUBST(LT_REVISION, 2)
 AC_SUBST(LT_AGE, 16)
 
 AM_INIT_AUTOMAKE([1.11.3 -Wall -Werror])
@@ -186,6 +186,7 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wtraditional-conversion" # Too many warnings for now
   nw="$nw -Wconversion"             # Too many warnings for now
   nw="$nw -Wsuggest-attribute=pure" # Is it worth using attributes?
+  nw="$nw -Woverlength-strings"     # Don't complain about string lengths
 
   gl_MANYWARN_ALL_GCC([ws])
   gl_MANYWARN_COMPLEMENT(ws, [$ws], [$nw])

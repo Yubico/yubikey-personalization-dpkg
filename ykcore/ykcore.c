@@ -68,7 +68,9 @@ int yk_release(void)
 YK_KEY *yk_open_first_key(void)
 {
 	int pids[] = {YUBIKEY_PID, NEO_OTP_PID, NEO_OTP_CCID_PID,
-		NEO_OTP_U2F_PID, NEO_OTP_U2F_CCID_PID};
+		NEO_OTP_U2F_PID, NEO_OTP_U2F_CCID_PID, YK4_OTP_PID,
+		YK4_OTP_U2F_PID, YK4_OTP_CCID_PID, YK4_OTP_U2F_CCID_PID,
+		PLUS_U2F_OTP_PID};
 
 	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids));
 	int rc = yk_errno;
@@ -104,30 +106,30 @@ int yk_check_firmware_version(YK_KEY *k)
 
 int yk_check_firmware_version2(YK_STATUS *st)
 {
-	if (!((st->versionMajor == 0 &&
-	       (st->versionMinor == 9 ||
-		st->versionBuild == 9)) ||
-	      (st->versionMajor == 1 &&
-	       (st->versionMinor == 0 ||
-		st->versionMinor == 1 ||
-		st->versionMinor == 2 ||
-		st->versionMinor == 3)) ||
-	      (st->versionMajor == 2 &&
-	       (st->versionMinor == 0 ||
-		st->versionMinor == 1 ||
-		st->versionMinor == 2 ||
-		st->versionMinor == 3 ||
-		st->versionMinor == 4 ||
-		st->versionMinor == 5)) ||
-	      (st->versionMajor == 3 &&
-	       (st->versionMinor == 0 ||
-		st->versionMinor == 1 ||
-		st->versionMinor == 2 ||
-		st->versionMinor == 3)))) {
-		yk_errno = YK_EFIRMWARE;
-		return 0;
+	switch(st->versionMajor) {
+		case 0:
+			if(st->versionMinor == 9)
+				return 1;
+			break;
+		case 1:
+			if(st->versionMinor <= 3)
+				return 1;
+			break;
+		case 2:
+			if(st->versionMinor <= 5)
+				return 1;
+			break;
+		case 3:
+			if(st->versionMinor <= 3)
+				return 1;
+			break;
+		case 4:
+			if(st->versionMinor <= 0)
+				return 1;
+			break;
 	}
-	return 1;
+	yk_errno = YK_EFIRMWARE;
+	return 0;
 }
 
 int yk_get_status(YK_KEY *k, YK_STATUS *status)
