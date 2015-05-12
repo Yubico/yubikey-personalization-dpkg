@@ -1,3 +1,41 @@
+We describe here one way to work with the package sources.
+
+Initialize cowbuilder:
+
+git-pbuilder create
+
+Optionally update cowbuilder:
+
+git-pbuilder update
+
+Clone the repository:
+
+git clone git@github.com:Yubico/yubikey-personalization-dpkg.git
+
+Build the package:
+
+git checkout debian
+gbp buildpackage --git-pbuilder --git-pbuilder-options=--twice
+
+If all goes well, you should have newly built packages in ../.
+
+To merge in a new upstream version do:
+
+git remote add yubico git@github.com:Yubico/yubikey-personalization.git
+git pull yubico
+git checkout master
+git merge <tag-of-the-new-release>
+git checkout debian
+git merge master
+# update debian/ files and commit as appropriate
+
+Preserve the upstream tarball:
+
+cp ../path/to/ykpers-X.Y.Z.tar.gz yubikey-personalization_X.Y.Z.orig.tar.gz
+pristine-tar commit yubikey-personalization_X.Y.Z.orig.tar.gz master
+
+---OLD notes below for historic reasons (remove on 2016-01-01)
+
 The recommended way to get the git repo of this package is to clone
 the git repository and then use gitpkg(1).
 
