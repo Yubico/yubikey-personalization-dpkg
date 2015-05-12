@@ -159,3 +159,5 @@ libykpers-1.so.1 libykpers-1-1 #MINVER#
  ykp_get_supported_key_length@LIBYKPERS_1.15 1.15.0
  LIBYKPERS_1.16@LIBYKPERS_1.16 1.16.0
  yk_get_key_vid_pid@LIBYKPERS_1.16 1.16.0
+ LIBYKPERS_1.17@LIBYKPERS_1.17 1.17.1
+ yk_get_capabilities@LIBYKPERS_1.17 1.17.1

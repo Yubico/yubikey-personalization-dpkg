@@ -1,8 +1,10 @@
 yubikey-personalization (1.17.1-1) unstable; urgency=low
 
   * New upstream release.
+    - Align debian/libykpers-1-1.symbols.
   * Add debian/gbp.conf.
-  * Use extend-diff-ignore instead of diff-ignore in debian/source/options.
+  * Use extend-diff-ignore instead of diff-ignore in
+    debian/source/options.
 
  -- Simon Josefsson <simon@josefsson.org>  Tue, 12 May 2015 21:54:00 +0200
 
