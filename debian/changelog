@@ -1,5 +1,6 @@
-yubikey-personalization (1.16.2-2) unstable; urgency=low
+yubikey-personalization (1.17.1-1) unstable; urgency=low
 
+  * New upstream release.
   * Add debian/gbp.conf.
   * Use extend-diff-ignore instead of diff-ignore in debian/source/options.
 
