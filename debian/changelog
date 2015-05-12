@@ -6,6 +6,7 @@ yubikey-personalization (1.17.1-1) unstable; urgency=low
   * Update debian/README.source.
   * Use extend-diff-ignore instead of diff-ignore in
     debian/source/options.
+  * Drop autotools-dev (we use dh-autoreconf).
 
  -- Simon Josefsson <simon@josefsson.org>  Tue, 12 May 2015 21:54:00 +0200
 
