@@ -1,6 +1,6 @@
 /* -*- mode:C; c-file-style: "bsd" -*- */
 /*
- * Copyright (c) 2008-2014 Yubico AB
+ * Copyright (c) 2008-2015 Yubico AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -120,11 +120,11 @@ int yk_check_firmware_version2(YK_STATUS *st)
 				return 1;
 			break;
 		case 3:
-			if(st->versionMinor <= 3)
+			if(st->versionMinor <= 4)
 				return 1;
 			break;
 		case 4:
-			if(st->versionMinor <= 0)
+			if(st->versionMinor <= 1)
 				return 1;
 			break;
 	}
@@ -189,6 +189,27 @@ int yk_get_serial(YK_KEY *yk, uint8_t slot, unsigned int flags, unsigned int *se
 		(buf[2] << 8) +
 		(buf[3]);
 
+	return 1;
+}
+
+int yk_get_capabilities(YK_KEY *yk, uint8_t slot, unsigned int flags,
+		unsigned char *capabilities, unsigned int *len)
+{
+	unsigned int response_len = 0;
+
+	if (!yk_write_to_key(yk, SLOT_YK4_CAPABILITIES, capabilities, 0))
+		return 0;
+
+	if (! yk_read_response_from_key(yk, slot, flags,
+					capabilities, *len, 0, /* we have no idea how much data we'll get */
+					&response_len))
+		return 0;
+
+	/* the first data of the capabilities string is the length */
+	response_len = capabilities[0];
+	response_len++;
+
+	*len = response_len;
 	return 1;
 }
 

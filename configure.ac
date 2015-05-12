@@ -1,5 +1,5 @@
 # Written by Richard Levitte <richard@levitte.org>.
-# Copyright (c) 2008-2014 Yubico AB
+# Copyright (c) 2008-2015 Yubico AB
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT([yubikey-personalization], [1.16.2],
+AC_INIT([yubikey-personalization], [1.17.1],
   [yubico-devel@googlegroups.com], [ykpers],
   [https://developers.yubico.com/yubikey-personalization/])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -36,9 +36,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # Interfaces changed/added/removed:   CURRENT++       REVISION=0
 # Interfaces added:                             AGE++
 # Interfaces removed:                           AGE=0
-AC_SUBST(LT_CURRENT, 17)
-AC_SUBST(LT_REVISION, 2)
-AC_SUBST(LT_AGE, 16)
+AC_SUBST(LT_CURRENT, 18)
+AC_SUBST(LT_REVISION, 1)
+AC_SUBST(LT_AGE, 17)
 
 AM_INIT_AUTOMAKE([1.11.3 -Wall -Werror])
 AM_SILENT_RULES([yes])
@@ -166,6 +166,13 @@ fi
 
 gl_LD_VERSION_SCRIPT
 gl_VALGRIND_TESTS
+
+AC_ARG_ENABLE([coverage],
+              [AS_HELP_STRING([--enable-coverage],
+                              [use Gcov to test the test suite])],
+                              [],
+                              [enable_cov=no])
+AM_CONDITIONAL([ENABLE_COV],[test '!' "$enable_cov" = no])
 
 AC_ARG_ENABLE([gcc-warnings],
   [AS_HELP_STRING([--enable-gcc-warnings],

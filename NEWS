@@ -1,5 +1,27 @@
 Yubikey-personalize NEWS -- History of user-visible changes.     -*- outline -*-
 
+* Version 1.17.1 (released 2015-04-01)
+
+** Fixup of 1.17.0
+
+* Version 1.17.0 (released 2015-04-01)
+
+** add yk_get_capabilities() to fetch capabilities.
+
+** add -c to ykinfo to fetch capabilities.
+
+** whitelist firmware 4.1.x
+
+* Version 1.16.4 (released 2015-03-23)
+
+** change the tool to accept autoeject time as a short instead of a byte
+
+* Version 1.16.3 (released 2015-03-10)
+
+** whitelist YubiKey version 3.4.x
+
+** only try to set libusb configuration if it's unset on the device
+
 * Version 1.16.2 (released 2014-11-28)
 
 ** ykinfo: fix modhex printout when serial is an odd number of hex digits.
