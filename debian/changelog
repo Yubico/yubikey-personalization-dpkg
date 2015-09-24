@@ -1,6 +1,7 @@
 yubikey-personalization (1.17.2-2) UNRELEASED; urgency=low
 
   * Update upstream-signing-key.pgp.
+  * Maintainer is now pkg-pkg-auth-maintainers, Tollef moved to Uploader.
 
  -- Simon Josefsson <simon@josefsson.org>  Thu, 24 Sep 2015 09:29:12 +0200
 
