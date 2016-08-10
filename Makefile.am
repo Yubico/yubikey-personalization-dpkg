@@ -91,9 +91,14 @@ ykinfo_SOURCES = ykinfo.c
 ykinfo_LDADD = ./libykpers-1.la $(LTLIBYUBIKEY)
 
 dist_man1_MANS = ykpersonalize.1 ykchalresp.1 ykinfo.1
+DISTCLEANFILES = $(dist_man1_MANS)
+MANSOURCES = ykpersonalize.1.adoc ykchalresp.1.adoc ykinfo.1.adoc
+SUFFIXES = .1.adoc .1
+.1.adoc.1:
+	$(A2X) -L --format=manpage -a revdate="Version $(VERSION)" $<
 
 # Dist docs from wiki.
-EXTRA_DIST = doc/Compatibility.asciidoc doc/Make-Release.asciidoc doc/USB-Hid-Issue.asciidoc doc/Windows-Build.asciidoc
+EXTRA_DIST = doc/Compatibility.asciidoc doc/USB-Hid-Issue.asciidoc
 
 # Dist contrib stuff.
 EXTRA_DIST += contrib/README contrib/programming.sh contrib/oath-unlock-reprogram.sh contrib/draft-josefsson-yubikey-config.xml

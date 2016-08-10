@@ -72,7 +72,7 @@ YK_KEY *yk_open_first_key(void)
 		YK4_OTP_U2F_PID, YK4_OTP_CCID_PID, YK4_OTP_U2F_CCID_PID,
 		PLUS_U2F_OTP_PID};
 
-	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids));
+	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids) / sizeof(int));
 	int rc = yk_errno;
 
 	if (yk) {
@@ -124,7 +124,7 @@ int yk_check_firmware_version2(YK_STATUS *st)
 				return 1;
 			break;
 		case 4:
-			if(st->versionMinor <= 2)
+			if(st->versionMinor <= 3)
 				return 1;
 			break;
 	}
