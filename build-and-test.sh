@@ -5,6 +5,17 @@ set -x
 
 autoreconf -i
 
+if [ "x$TRAVIS_OS_NAME" != "xosx" ]; then
+    sudo apt-get update -qq || true
+    sudo apt-get remove -qq -y $REMOVE
+    sudo apt-get autoremove -qq
+    sudo apt-get install -qq -y --no-install-recommends libyubikey-dev asciidoc docbook-xml xsltproc libxml2-utils $EXTRA
+else
+    brew install libyubikey
+    brew install json-c
+    brew install asciidoc
+fi
+
 if [ "x$LIBUSB" = "xwindows" ]; then
     ./configure --with-backend=stub
     touch ChangeLog

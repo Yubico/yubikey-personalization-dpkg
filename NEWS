@@ -1,5 +1,15 @@
 Yubikey-personalize NEWS -- History of user-visible changes.     -*- outline -*-
 
+* Version 1.17.3 (released 2015-12-28)
+
+** Dont read to much if we don't find a key.
+
+** Text updates to make options clearer.
+
+** Correct logic for question when mode switching to non-otp mode.
+
+** Add 4.3 as supported firmware.
+
 * Version 1.17.2 (released 2015-09-22)
 
 ** Let _yk_write() return an error if yk_wait_for_key_status() fails.
