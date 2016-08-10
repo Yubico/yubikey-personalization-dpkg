@@ -1,1 +1,3 @@
-extend-diff-ignore=build-and-test.sh|.travis.yml|.gitignore|.gitmodules|contrib/draft-josefsson-yubikey-config.xml|ykpers4mac.mk|tests/ykpers-args.h|tests/ykpers-args.c|BLURB|README.adoc
+# These are files in git but not in the tarball.  So you know how to avoid
+# manually maintaining this list?  Tell simon@josefsson.org
+extend-diff-ignore=build-and-test.sh|.travis.yml|.gitignore|.gitmodules|contrib/draft-josefsson-yubikey-config.xml|ykpers4mac.mk|tests/ykpers-args.h|tests/ykpers-args.c|BLURB|README.adoc|ykchalresp.1.adoc|ykinfo.1.adoc|ykpersonalize.1.adoc
