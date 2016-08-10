@@ -4,10 +4,10 @@ Priority: extra
 Maintainer: Debian Authentication Maintainers <pkg-auth-maintainers@lists.alioth.debian.org>
 Uploaders: Simon Josefsson <simon@josefsson.org>, Klas Lindfors <klas@yubico.com>, Dain Nilsson <dain@yubico.com>, Tollef Fog Heen <tfheen@debian.org>
 Build-Depends: debhelper (>= 9), libusb-1.0-0-dev [!hurd-i386], libusb-dev [hurd-i386], libyubikey-dev(>= 1.5), libjson-c-dev, chrpath, pkg-config, dh-autoreconf, udev [linux-any]
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: https://developers.yubico.com/yubikey-personalization/
-Vcs-Git: git://github.com/Yubico/yubikey-personalization-dpkg.git
 Vcs-Browser: https://github.com/Yubico/yubikey-personalization-dpkg
+Vcs-Git: https://github.com/Yubico/yubikey-personalization-dpkg.git
 
 Package: yubikey-personalization
 Architecture: any

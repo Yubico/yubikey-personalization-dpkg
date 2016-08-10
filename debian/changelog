@@ -1,9 +1,12 @@
-yubikey-personalization (1.17.2-2) UNRELEASED; urgency=low
+yubikey-personalization (1.17.3-1) UNRELEASED; urgency=low
 
+  * New upstream release.
   * Update upstream-signing-key.pgp.
   * Maintainer is now pkg-pkg-auth-maintainers, Tollef moved to Uploader.
+  * Use https URLs in Vcs-Git.
+  * Update Standards-Version from 3.9.6 to 3.9.8.
 
- -- Simon Josefsson <simon@josefsson.org>  Thu, 24 Sep 2015 09:29:12 +0200
+ -- Simon Josefsson <simon@josefsson.org>  Wed, 10 Aug 2016 06:17:48 +0200
 
 yubikey-personalization (1.17.2-1) unstable; urgency=low
 
