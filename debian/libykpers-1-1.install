@@ -1,2 +1,3 @@
 usr/lib/*/libykpers-1.so.*
 lib/udev/rules.d/*-yubikey.rules
+debian/com.yubico.yubikey.ykpers.metainfo.xml /usr/share/metadata/

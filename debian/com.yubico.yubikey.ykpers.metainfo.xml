@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <id>com.yubico.yubikey.ykpers</id>
+  <metadata_license>MIT</metadata_license>
+  <name>yubikey-personalization</name>
+  <summary>Personalize YubiKey OTP functionality</summary>
+  <description>
+    <p>
+      YubiKey Personalization allows you to configure the
+      OTP-functionality of the YubiKey security hardware.
+    </p>
+  </description>
+  <provides>
+    <modalias>usb:v1050p0010d*</modalias>
+    <modalias>usb:v1050p0110d*</modalias>
+    <modalias>usb:v1050p0111d*</modalias>
+    <modalias>usb:v1050p0114d*</modalias>
+    <modalias>usb:v1050p0116d*</modalias>
+    <modalias>usb:v1050p0401d*</modalias>
+    <modalias>usb:v1050p0403d*</modalias>
+    <modalias>usb:v1050p0405d*</modalias>
+    <modalias>usb:v1050p0407d*</modalias>
+    <modalias>usb:v1050p0410d*</modalias>
+  </provides>
+</component>
