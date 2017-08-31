@@ -42,7 +42,16 @@
 #endif
 
 #ifdef YK_DEBUG
-static void _yk_hexdump(void *, int);
+#define _yk_hexdump(buffer, size) \
+	do { \
+		unsigned char *p = buffer; \
+		int i; \
+		fprintf(stderr, "%25s: ", __func__); \
+		for(i = 0; i < size; i++) { \
+			fprintf(stderr, "%02x ", *p++); \
+		} \
+		fprintf(stderr, "\n"); \
+	} while(0)
 #endif
 
 /*
@@ -67,12 +76,17 @@ int yk_release(void)
 
 YK_KEY *yk_open_first_key(void)
 {
+	return yk_open_key(0);
+}
+
+YK_KEY *yk_open_key(int index)
+{
 	int pids[] = {YUBIKEY_PID, NEO_OTP_PID, NEO_OTP_CCID_PID,
 		NEO_OTP_U2F_PID, NEO_OTP_U2F_CCID_PID, YK4_OTP_PID,
 		YK4_OTP_U2F_PID, YK4_OTP_CCID_PID, YK4_OTP_U2F_CCID_PID,
 		PLUS_U2F_OTP_PID};
 
-	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids) / sizeof(int));
+	YK_KEY *yk = _ykusb_open_device(YUBICO_VID, pids, sizeof(pids) / sizeof(int), index);
 	int rc = yk_errno;
 
 	if (yk) {
@@ -537,7 +551,7 @@ int yk_wait_for_key_status(YK_KEY *yk, uint8_t slot, unsigned int flags,
 				if (! blocking) {
 					/* Extend timeout first time we see RESP_TIMEOUT_WAIT_FLAG. */
 					blocking = 1;
-					max_time_ms += 15000;
+					max_time_ms += 256 * 1000;
 				}
 			} else {
 				/* Reset read mode of Yubikey before aborting. */
@@ -746,18 +760,3 @@ uint16_t yk_endian_swap_16(uint16_t x)
 
 	return x;
 }
-
-#ifdef YK_DEBUG
-/* Private little hexdump function for debugging */
-static void _yk_hexdump(void *buffer, int size)
-{
-       unsigned char *p = buffer;
-       int i;
-       for (i = 0; i < size; i++) {
-               fprintf(stderr, "%02x ", *p);
-               p++;
-      }
-      fprintf(stderr, "\n");
-      fflush(stderr);
-}
-#endif

@@ -31,9 +31,12 @@
 #ifndef YKPERS_ARGS_H
 #define YKPERS_ARGS_H
 
-const char *usage;
+#include "ykpers.h"
 
-int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
+const char *usage;
+const char *optstring;
+
+int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, char *oathid,
 		   const char **infname, const char **outfname,
 		   int *data_format, bool *autocommit,
 		   YK_STATUS *st, bool *verbose, bool *dry_run,
@@ -41,6 +44,8 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 		   char *keylocation, char *ndef_type, char *ndef, unsigned char *usb_mode,
 		   bool *zap, unsigned char *scan_bin, unsigned char *cr_timeout,
 		   unsigned short *autoeject_timeout, int *num_modes_seen, int *exit_code);
+
+int set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st);
 
 void report_yk_error(void);
 

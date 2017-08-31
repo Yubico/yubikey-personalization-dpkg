@@ -265,3 +265,10 @@ LIBYKPERS_1.17 {
   yk_get_capabilities;
 # Variables:
 } LIBYKPERS_1.16;
+
+LIBYKPERS_1.18 {
+  global:
+# Functions:
+  yk_open_key;
+# Variables:
+} LIBYKPERS_1.17;

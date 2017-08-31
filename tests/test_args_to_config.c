@@ -109,12 +109,12 @@ static int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	char keylocation = 0;
 	bool use_access_code = false;
 	unsigned char access_code[256];
-	YK_KEY *yk = 0;
 	bool autocommit = false;
 	int exit_code = 0;
 	int data_format = YKP_FORMAT_LEGACY;
 
 	/* Options */
+	char oathid[128] = {0};
 	char ndef[128];
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -140,7 +140,7 @@ static int _test_config (YKP_CONFIG *cfg, YK_STATUS *st, int argc, char **argv)
 	assert(ykp_configure_for(cfg, 1, st) == 1);
 
 	/* call args_to_config from ykpers-args.c with a fake set of program arguments */
-	rc = args_to_config(argc, argv, cfg, yk,
+	rc = args_to_config(argc, argv, cfg, oathid,
 			    &infname, &outfname,
 			    &data_format, &autocommit,
 			    st, &verbose, &dry_run,
@@ -298,13 +298,13 @@ static void _test_non_config_args(void)
 	char keylocation = 0;
 	bool use_access_code = false;
 	unsigned char access_code[256];
-	YK_KEY *yk = 0;
 	bool autocommit = false;
 	int exit_code = 0;
 	int i;
 	int data_format = YKP_FORMAT_LEGACY;
 
 	/* Options */
+	char oathid[128] = {0};
 	char ndef[128];
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -335,7 +335,7 @@ static void _test_non_config_args(void)
 	//assert(ykp_configure_for(cfg, 1, st) == 1);
 
 	/* call args_to_config from ykpers-args.c with a fake set of program arguments */
-	rc = args_to_config(argc, argv, cfg, yk,
+	rc = args_to_config(argc, argv, cfg, oathid,
 			    &infname, &outfname,
 			    &data_format, &autocommit,
 			    st, &verbose, &dry_run,
@@ -630,6 +630,24 @@ static void _test_ndef2_with_neo(void)
 	free(st);
 }
 
+static void _test_scanmap_no_config(void)
+{
+	YKP_CONFIG *cfg = ykp_alloc();
+	YK_STATUS *st = _test_init_st(4, 3, 0);
+
+	char *argv[] = {
+		"unittest", "-S", NULL
+	};
+	int argc = 2;
+
+	int rc = _test_config(cfg, st, argc, argv);
+	assert(rc == 1);
+	assert(((struct ykp_config_t*)cfg)->command == SLOT_SCAN_MAP);
+
+	ykp_free_config(cfg);
+	free(st);
+}
+
 int main (void)
 {
 	_test_config_slot1();
@@ -655,6 +673,7 @@ int main (void)
 	_test_slot_two_with_neo_beta();
 	_test_ndef2_with_neo();
 	_test_ndef2_with_neo_beta();
+	_test_scanmap_no_config();
 
 	return 0;
 }

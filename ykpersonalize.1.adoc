@@ -11,7 +11,7 @@ ykpersonalize - personalize YubiKey OTP tokens
 
 == SYNOPSIS
 
-*ykpersonalize* [__-1__ | __-2__] [__-sfile__] [__-ifile__] [__-fformat__] [__-axxx__] [__-cxxx__] [__-ooption__] [__-y__] [__-v__] [__-d__] [__-h__] [__-n__] [__-t__] [__-u__] [__-x__] [__-z__] [__-m__] [__-S__] [__-V__]
+*ykpersonalize* [__-Nkey__] [__-1__ | __-2__] [__-sfile__] [__-ifile__] [__-fformat__] [__-axxx__] [__-cxxx__] [__-ooption__] [__-y__] [__-v__] [__-d__] [__-h__] [__-n__] [__-t__] [__-u__] [__-x__] [__-z__] [__-m__] [__-S__] [__-V__]
 
 == DESCRIPTION
 
@@ -21,32 +21,34 @@ manual: YubiKey manual (https://www.yubico.com/wp-content/uploads/2015/03/YubiKe
 
 == OPTIONS
 
-*−1*:: change the first configuration. This is the default and is
+*-Nkey*:: use the nth YubiKey found.
+
+*-1*:: change the first configuration. This is the default and is
 normally used for true OTP generation. In this configuration, the option
 flag *-oappend-cr* is set by default.
 
-*−2*:: change the second configuration. This is for YubiKey II only
+*-2*:: change the second configuration. This is for YubiKey II only
 and is then normally used for static key generation. In this
 configuration, the option flags **-oappend-cr**, **-ostatic-ticket**,
 **-ostrong-pw1**, *-ostrong-pw2* and *-oman-update* are set by default.
 
 *-z*:: delete configuration in selected slot
 
-*−s*'file':: save configuration to file instead of key. (if file
+*-s*'file':: save configuration to file instead of key. (if file
 is -, send to stdout)
 
-*−i*'file':: read configuration from file. (if file is -, read
+*-i*'file':: read configuration from file. (if file is -, read
 from stdin) Configuration import is only valid for the ycfg format.
 
-*−f*'format':: format to be used with *-s* and *-i*. Valid options are *ycfg* and *legacy*.
+*-f*'format':: format to be used with *-s* and *-i*. Valid options are *ycfg* and *legacy*.
 
-*−a*['xxx']:: the AES secret key as a 32 (or 40 for OATH-HOTP/HMAC CHAL-RESP) char hex value (not modhex) (none to prompt for key on stdin) If *−a* is not used a random key will be generated.
+*-a*['xxx']:: the AES secret key as a 32 (or 40 for OATH-HOTP/HMAC CHAL-RESP) char hex value (not modhex) (none to prompt for key on stdin) If *-a* is not used a random key will be generated.
 
-*−c*'xxx':: A 12 char hex value (not modhex) to use as access
+*-c*'xxx':: A 12 char hex value (not modhex) to use as access
 code for programming. NOTE: this does NOT SET the access code, that’s
 done with **-oaccess**__=__.
 
-*−o*'option':: change configuration option. Possible option arguments are:
+*-o*'option':: change configuration option. Possible option arguments are:
 
 *fixed*='fffffffffff'::: The modhex _public identity_ of the YubiKey, 0-32 characters long
 (encoding up to 16 bytes). It’s possible to give the identity in hex as
@@ -60,9 +62,9 @@ identifier for the user, for example.
 
 *oath-imf*='xxx'::: Set OATH Initial Moving Factor. This is the initial counter value for the YubiKey. This should be a value between 0 and 1048560, evenly dividable by 16.
 
-[−]'ticket-flag'::: Set/clear ticket flag, see the section 'Ticket flags'
+[-]'ticket-flag'::: Set/clear ticket flag, see the section 'Ticket flags'
 
-[−]'configuration-flag'::: Set/clear ticket flag, see the section 'Configuration flags'
+[-]'configuration-flag'::: Set/clear ticket flag, see the section 'Configuration flags'
 
 *-y*:: always commit without prompting
 *-d*:: dry-run, run without writing a YubiKey
@@ -72,6 +74,12 @@ identifier for the user, for example.
 
 
 === YubiKey Neo only
+
+*-n* URI:: Program NFC NDEF URI
+
+*-t* text:: Program NFC NDEF text
+
+=== YubiKey 3.0 and above
 
 *-m* mode::
 
@@ -91,16 +99,13 @@ press for challenge response (default is 15) +
  autoeject_timeout is the timeout in seconds before the card is
 automatically ejected in mode 81
 
-*-n* URI:: Program NFC NDEF URI
-
-*-t* text:: Program NFC NDEF text
-
-
-=== YubiKey 3.0 and above
+Removing OTP mode also disable communication between ykpersonalize and
+the YubiKey, further mode changes will have to be done with ykneomgr (for CCID mode) 
+or u2f-host (for U2F mode)
 
 *-S*'0605...'::
 
-set the scanmap to be used with the YubiKey NEO. It must be 45 unique
+set the scanmap to be used with the YubiKey. It must be 45 unique
 bytes as 90 characters. Leave argument empty to reset to the YubiKey’s
 default. The scanmap must be sent in the order:
  
@@ -136,79 +141,81 @@ possible if both slots are configured as updatable.
 
 == Ticket flags
 
-[−]*tab-first*::
+[-]*tab-first*::
 
 Send a tab character as the first character. This is usually used to
 move to the next input field.
 
-[−]*append-tab1*::
+[-]*append-tab1*::
 
 Send a tab character between the fixed part and the one-time password
 part. This is useful if you have the fixed portion equal to the user
 name and two input fields that you navigate between using tab.
 
-[−]*append-tab2*::
+[-]*append-tab2*::
 
 Send a tab character as the last character.
 
-[−]*append-delay1*:: add a half-second delay before sending the one-time password part. This
+[-]*append-delay1*:: add a half-second delay before sending the one-time password part. This
 option is only valid for firmware 1.x and 2.x.
 
-[−]*append-delay2*:: a half-second delay after sending the one-time password part. This
+[-]*append-delay2*:: a half-second delay after sending the one-time password part. This
 option is only valid for firmware 1.x and 2.x.
 
-[−]*append-cr*:: a carriage return after sending the one-time password part.
+[-]*append-cr*:: a carriage return after sending the one-time password part.
 
 
 === YubiKey 2.0 firmware and above
 
-[−]*protect-cfg2*:: When written to configuration 1, block later updates to configuration 2.
+[-]*protect-cfg2*:: When written to configuration 1, block later updates to configuration 2.
 When written to configuration 2, prevent configuration 1 from having the lock bit set.
 
 
 === YubiKey 2.1 firmware and above
 
-[−]*oath-hotp*:: Set OATH-HOTP mode rather than YubiKey mode. In this mode, the token
+[-]*oath-hotp*:: Set OATH-HOTP mode rather than YubiKey mode. In this mode, the token
 functions according to the OATH-HOTP standard.
 
 
 === YubiKey 2.2 firmware and above
 
-[−]*chal-resp*:: Set challenge-response mode.
+[-]*chal-resp*:: Set challenge-response mode.
 
 
 == Configuration flags
 
-[−]*send-ref* Send a reference string of all 16 modhex characters
-before the fixed part. This can not be combined with the *-ostrong-pw2*
-flag. +
- [−]*pacing-10ms*
+[-]*send-ref*::
+
+Send a reference string of all 16 modhex characters before the fixed part. When combined
+with *-ostrong-pw2* this sends a '!' before the rest of the string.
+
+[-]*pacing-10ms*::
 
 Add a 10ms delay between key presses.
 
-[−]*pacing-20ms*
+[-]*pacing-20ms*::
 
 Add a 20ms delay between key presses.
 
-[−]*static-ticket*
+[-]*static-ticket*::
 
 Output a fixed string rather than a one-time password. The password is
 still based on the AES key and should be hard to guess and impossible to
 remember.
 
-*YubiKey 1.x firmware only* +
- [−]*ticket-first*
+=== YubiKey 1.x firmware only
+[-]*ticket-first*::
 
 Send the one-time password rather than the fixed part first.
 
-[−]*allow-hidtrig*
+[-]*allow-hidtrig*::
 
 Allow trigger through HID/keyboard by pressing caps-, num or scroll-lock
 twice. Not recommended for security reasons.
 
 
 === YubiKey 2.0 firmware and above
-[−]*short-ticket*::
+[-]*short-ticket*::
 
 Limit the length of the static string to max 16 digits. This flag only
 makes sense with the *-ostatic-ticket* option. When *-oshort-ticket* is
@@ -219,37 +226,37 @@ _h:8b080f0f122c9a12150f079e_ in this mode it will send _Hello World!_ on
 a qwerty keyboard. This mode sends raw scan codes, so output will differ
 between keyboard layouts.
 
-[−]*strong-pw1*::
+[-]*strong-pw1*::
 
 Upper-case the two first letters of the output string. This is for
 compatibility with legacy systems that enforce both uppercase and
 lowercase characters in a password and does not add any security.
 
-[−]*strong-pw2*::
+[-]*strong-pw2*::
 
 Replace the first eight characters of the modhex alphabet with the
 numbers 0 to 7. Like **-ostrong-pw1**, this is intended to support
 legacy systems.
 
-[−]*man-update*::
+[-]*man-update*::
 
 Enable user-initiated update of the static password. Only makes sense
 with the *-ostatic-ticket* option. This is only valid for firmware 2.x.
 
 === YubiKey 2.1 firmware and above
-[−]*oath-hotp8*::
+[-]*oath-hotp8*::
 
 When set, generate an 8-digit HOTP rather than a 6-digit one.
 
-[−]*oath-fixed-modhex1*::
+[-]*oath-fixed-modhex1*::
 
 When set, the first byte of the fixed part is sent as modhex.
 
-[−]*oath-fixed-modhex2*::
+[-]*oath-fixed-modhex2*::
 
 When set, the first two bytes of the fixed part is sent as modhex.
 
-[−]*oath-fixed-modhex*::
+[-]*oath-fixed-modhex*::
 
 When set, the fixed part is sent as modhex.
 
@@ -262,36 +269,36 @@ must be specified.
 
 
 === YubiKey 2.2 firmware and above
-[−]*chal-yubico*::
+[-]*chal-yubico*::
 
 Yubico OTP challenge-response mode.
 
-[−]*chal-hmac*::
+[-]*chal-hmac*::
 
 Generate HMAC-SHA1 challenge responses.
 
-[−]*hmac-lt64*::
+[-]*hmac-lt64*::
 
 Calculate HMAC on less than 64 bytes input. Whatever is in the last byte
 of the challenge is used as end of input marker (backtracking from end
 of payload).
 
-[−]*chal-btn-trig*::
+[-]*chal-btn-trig*::
 
 The YubiKey will wait for the user to press the key (within 15 seconds)
 before answering the challenge.
 
-[−]*serial-btn-visible*::
+[-]*serial-btn-visible*::
 
 The YubiKey will emit its serial number if the button is pressed during
 power-up. This option is only valid for the 2.x firmware line.
 
-[−]*serial-usb-visible*::
+[-]*serial-usb-visible*::
 
 The YubiKey will indicate its serial number in the USB iSerial field.
 This option is not available in the 3.0 and 3.1 firmwares.
 
-[−]*serial-api-visible*::
+[-]*serial-api-visible*::
 
 The YubiKey will allow its serial number to be read using an API call.
 
@@ -311,34 +318,33 @@ accomplished using the appropriate oath-fixed-modhex options.
 Note that the YubiKey must be programmed to allow reading its serial
 number, otherwise automatic token id creation is not possible.
 
-See section "5.3.4 - OATH-HOTP Token Identifier" of the YubiKey manual ⟨
-URL: http://yubico.com/files/YubiKey_manual-2.0.pdf ⟩ for further
-details.
+See section "5.3.4 - OATH-HOTP Token Identifier" of the YubiKey manual
+http://yubico.com/files/YubiKey_manual-2.0.pdf for further details.
 
 === YubiKey 2.3 firmware and above
-[−]*use-numeric-keypad*::
+[-]*use-numeric-keypad*::
 
 Send scancodes for numeric keypad keypresses when sending digits - helps
 with some keyboard layouts. This option is only valid for the 2.x
 firmware line.
 
-[−]*fast-trig*::
+[-]*fast-trig*::
 
 Faster triggering when only configuration 1 is available. This option is
 always in effect on firmware versions 3.0 and above.
 
-[−]*allow-update*::
+[-]*allow-update*::
 
 Allow updating (or swapping) of certain parameters in a configuration at
 a later time.
 
-[−]*dormant*::
+[-]*dormant*::
 
 Hides/unhides a configuration stored in a YubiKey.
 
 
 === YubiKey 2.4/3.1 firmware and above
-[−]*led-inv*::
+[-]*led-inv*::
 
 Inverts the behaviour of the led on the YubiKey.
 
@@ -347,7 +353,7 @@ OATH-HOTP Mode
 ~~~~~~~~~~~~~~
 
 When using OATH-HOTP mode, a HMAC key of 160 bits (20 bytes, 40 chars of
-hex) can be supplied with *−a*.
+hex) can be supplied with *-a*.
 
 
 Challenge-response Mode
@@ -375,17 +381,28 @@ To convert the other way, use:
  tr "[cbdefghijklnrtuv]" "[0123456789abcdef]"
 
 
+EXAMPLES
+~~~~~~~~
+
+Programming for YubiCloud:
+
+ ykpersonalize -1 -ouid=h:`dd if=/dev/urandom bs=1 count=6 status=none | hexdump -e '/1 "%02x"'` -ofixed=h:ff`dd if=/dev/urandom bs=1 count=5 status=none | hexdump -e '/1 "%02x"'`
+
+This will program a key with a random 6 byte uid and a 12 character fixed
+string starting with vv. This is suitable for upload to YubiCloud at
+https://upload.yubico.com/
+
 BUGS
 ~~~~
 
-Report ykpersonalize bugs in the issue tracker ⟨ URL:
-https://github.com/Yubico/yubikey-personalization/issues ⟩
+Report ykpersonalize bugs in the issue tracker
+https://github.com/Yubico/yubikey-personalization/issues
 
 
 SEE ALSO
 ~~~~~~~~
 
-The ykpersonalize home page ⟨ URL:
-https://developers.yubico.com/yubikey-personalization/ ⟩
+The ykpersonalize home page
+https://developers.yubico.com/yubikey-personalization/
 
-YubiKeys can be obtained from Yubico ⟨ URL: http://www.yubico.com/ ⟩ .
+YubiKeys can be obtained from Yubico http://www.yubico.com/

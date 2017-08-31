@@ -38,6 +38,7 @@
 
 #include <ykpers.h>
 #include <ykdef.h>
+#include <ykpers-version.h>
 
 #include "ykpers-args.h"
 
@@ -59,6 +60,7 @@ int main(int argc, char **argv)
 	bool dry_run = false;
 
 	/* Options */
+	char oathid[128] = {0};
 	char ndef_string[128] = {0};
 	char ndef_type = 0;
 	unsigned char usb_mode = 0;
@@ -66,25 +68,50 @@ int main(int argc, char **argv)
 	unsigned short autoeject_timeout = 0;
 	int num_modes_seen = 0;
 	bool zap = false;
+	int key_index = 0;
 
 	/* Assume the worst */
 	bool error = true;
 	int exit_code = 0;
 
+	int c;
+
 	ykp_errno = 0;
 	yk_errno = 0;
+
+	while((c = getopt(argc, argv, optstring)) != -1) {
+		switch(c) {
+			case 'h':
+				fputs(usage, stderr);
+				exit(0);
+			case 'N':
+				key_index = atoi(optarg);
+				break;
+			case 'V':
+				fputs(YKPERS_VERSION_STRING "\n", stderr);
+				return 0;
+			case ':':
+				switch(optopt) {
+					case 'S':
+						continue;
+					case 'a':
+						continue;
+				}
+				fprintf(stderr, "Option %c requires an argument.\n", optopt);
+				exit(1);
+				break;
+			default:
+				continue;
+		}
+	}
+	optind = 1;
 
 	if (!yk_init()) {
 		exit_code = 1;
 		goto err;
 	}
 
-	if (argc == 2 && strcmp (argv[1], "-h") == 0) {
-		fputs(usage, stderr);
-		goto err;
-	}
-
-	if (!(yk = yk_open_first_key())) {
+	if (!(yk = yk_open_key(key_index))) {
 		exit_code = 1;
 		goto err;
 	}
@@ -118,7 +145,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Parse all arguments in a testable way */
-	if (! args_to_config(argc, argv, cfg, yk,
+	if (! args_to_config(argc, argv, cfg, oathid,
 			     &infname, &outfname,
 			     &data_format, &autocommit,
 			     st, &verbose, &dry_run,
@@ -127,6 +154,10 @@ int main(int argc, char **argv)
 			     &usb_mode, &zap, scan_codes, &cr_timeout,
 			     &autoeject_timeout, &num_modes_seen, &exit_code)) {
 		goto err;
+	}
+
+	if (oathid[0] != 0) {
+		set_oath_id(oathid, cfg, yk, st);
 	}
 
 	if (verbose && (ykds_version_major(st) > 2 ||
@@ -356,7 +387,7 @@ int main(int argc, char **argv)
 
 				if((usb_mode & 0xf) == MODE_CCID || (usb_mode & 0xf) == MODE_U2F ||
 						(usb_mode & 0xf) == MODE_U2F_CCID) {
-					fprintf(stderr, "WARNING: This tool will not be able to switch back from the selected mode, really commit? (y/n) [n]: ");
+					fprintf(stderr, "WARNING: Changing mode will require you to use another tool (ykneomgr or u2f-host) to switch back if OTP mode is disabled, really commit? (y/n) [n]: ");
 					if (autocommit) {
 						strcpy(commitbuf, "yes");
 						puts(commitbuf);
