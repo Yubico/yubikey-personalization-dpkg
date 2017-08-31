@@ -40,7 +40,6 @@
 #include <ykpers.h>
 #include <yubikey.h> /* To get yubikey_modhex_encode and yubikey_hex_encode */
 #include <ykdef.h>
-#include <ykpers-version.h>
 #include "ykpers-args.h"
 
 #define YUBICO_OATH_VENDOR_ID_HEX	0xe1	/* UB as hex */
@@ -48,6 +47,7 @@
 
 const char *usage =
 "Usage: ykpersonalize [options]\n"
+"-Nkey     use nth key found\n"
 "-u        update configuration without overwriting.  This is only available\n"
 "          in YubiKey 2.3 and later.  EXTFLAG_ALLOW_UPDATE will be set by\n"
 "          default\n"
@@ -74,11 +74,11 @@ const char *usage =
 "          (this does NOT SET the access code, that's done with -oaccess=)\n"
 "-nXXX..   Write NDEF URI to YubiKey NEO, must be used with -1 or -2\n"
 "-tXXX..   Write NDEF text to YubiKey NEO, must be used with -1 or -2\n"
-"-mMODE    Set the USB device configuration of the YubiKey NEO.\n"
-"          See the manpage for details\n"
+"-mMODE    Set the USB device configuration of the YubiKey.\n"
+"          See the manpage for details. This is for YubiKey 3.0 and newer only.\n"
 "-S0605..  Set the scanmap to use with the YubiKey. Must be 45 unique bytes,\n"
 "          in hex.  Use with no argument to reset to the default. This is for\n"
-"          YubiKey 3.0 and newer only\n"
+"          YubiKey 3.0 and newer only.\n"
 "-oOPTION  change configuration option.  Possible OPTION arguments are:\n"
 "          fixed=xxxxxxxxxxx   The public identity of key, in MODHEX.\n"
 "                              This is 0-32 characters long.\n"
@@ -156,12 +156,11 @@ const char *usage =
 "-V        tool version\n"
 "-h        help (this text)\n"
 ;
-const char *optstring = "u12xza::c:n:t:hi:o:s:f:dvym:S::V";
+const char *optstring = ":u12xza:c:n:t:hi:o:s:f:dvym:S:VN:";
 
 static int _set_fixed(char *opt, YKP_CONFIG *cfg);
 static int _format_decimal_as_hex(uint8_t *dst, size_t dst_len, uint8_t *src);
 static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t type, uint32_t mui);
-static int _set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st);
 
 static int hex_modhex_decode(unsigned char *result, size_t *resultlen,
 			     const char *str, size_t strl,
@@ -228,7 +227,7 @@ extern int optind;
  *
  * Done in this way to be testable (see tests/test_args_to_config.c).
  */
-int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
+int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, char *oathid,
 		   const char **infname, const char **outfname,
 		   int *data_format, bool *autocommit,
 		   YK_STATUS *st, bool *verbose, bool *dry_run,
@@ -382,12 +381,8 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 			}
 			break;
 		case 'a':
-			if(optarg) {
-				aeshash = optarg;
-				*keylocation = 1;
-			} else {
-				*keylocation = 2;
-			}
+			aeshash = optarg;
+			*keylocation = 1;
 			break;
 		case 'c': {
 			size_t access_code_len = 0;
@@ -470,7 +465,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 					*exit_code = 1;
 					return 0;
 				}
-				if(optarg) {
+				{
 					size_t scanbinlen;
 					size_t scanlen = strlen (optarg);
 					int rc = hex_modhex_decode(scan_bin, &scanbinlen,
@@ -485,8 +480,6 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 						*exit_code = 1;
 						return 0;
 					}
-				} else {
-					memset(scan_bin, 0, scanlength);
 				}
 				scan_map_seen = true;
 			}
@@ -631,10 +624,7 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 				}
 			}
 			else if (strncmp(optarg, "oath-id=", 8) == 0 || strcmp(optarg, "oath-id") == 0) {
-				if (_set_oath_id(optarg, cfg, yk, st) != 1) {
-					*exit_code = 1;
-					return 0;
-				}
+				strcpy(oathid, optarg);
 			}
 
 #define EXTFLAG(o, f)							\
@@ -676,9 +666,28 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 			*autocommit = true;
 			break;
 		case 'V':
-			fputs(YKPERS_VERSION_STRING "\n", stderr);
-			*exit_code = 0;
-			return 0;
+		case 'N':
+			continue;
+		case ':':
+			switch(optopt) {
+				case 'S':
+					{
+						size_t scanlength = strlen(SCAN_MAP);
+						if(slot_chosen || swap_seen || update_seen || option_seen || ndef_seen || *zap || usb_mode_seen) {
+							fprintf(stderr, "Scanmap (-S) can not be combined with other options.\n");
+							*exit_code = 1;
+							return 0;
+						}
+						memset(scan_bin, 0, scanlength);
+						scan_map_seen = true;
+						if (!ykp_configure_command(cfg, SLOT_SCAN_MAP))
+							return 0;
+						continue;
+					}
+				case 'a':
+					*keylocation = 2;
+					continue;
+			}
 		case 'h':
 		default:
 			fputs(usage, stderr);
@@ -688,7 +697,11 @@ int args_to_config(int argc, char **argv, YKP_CONFIG *cfg, YK_KEY *yk,
 	}
 
 	if (!slot_chosen && !ndef_seen && !swap_seen && !usb_mode_seen && !scan_map_seen) {
-		fprintf(stderr, "A slot must be chosen with -1 or -2.\n");
+		if (argc == 1) {
+			fputs(usage, stderr);
+		} else {
+			fprintf(stderr, "A slot must be chosen with -1 or -2.\n");
+		}
 		*exit_code = 1;
 		return 0;
 	}
@@ -789,7 +802,7 @@ static int _format_oath_id(uint8_t *dst, size_t dst_len, uint8_t vendor, uint8_t
 	return 1;
 }
 
-static int _set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st) {
+int set_oath_id(char *opt, YKP_CONFIG *cfg, YK_KEY *yk, YK_STATUS *st) {
 	/* For details, see YubiKey Manual 2010-09-16 section 5.3.4 - OATH-HOTP Token Identifier */
 	if (!ykp_get_tktflag_OATH_HOTP(cfg)) {
 		fprintf(stderr,
