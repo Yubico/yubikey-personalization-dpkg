@@ -1,3 +1,10 @@
+yubikey-personalization (1.18.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update Standards-Version from 3.9.8 to 4.1.0.
+
+ -- Simon Josefsson <simon@josefsson.org>  Thu, 31 Aug 2017 12:31:21 +0200
+
 yubikey-personalization (1.17.3-2) unstable; urgency=low
 
   * Support appstream.  Closes: #836385.
